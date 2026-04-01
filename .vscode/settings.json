@@ -6,6 +6,8 @@
     "yaml": true,
     "plaintext": true
   },
+  "github.copilot.chat.agent.enabled": true,
+  "github.copilot.chat.prompts.enabled": true,
   "// Editor Settings": "",
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
