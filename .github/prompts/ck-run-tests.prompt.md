@@ -92,7 +92,9 @@ Với **mỗi test case** trong danh sách đã chọn:
 Thực thi test case: {Mã TC} — {Tên test}
 
 URL ứng dụng: {URL}
-BẮT BUỘC: Quay video (recording) toàn bộ quá trình thực hiện TC này từ đầu đến cuối.
+
+Dùng lệnh sau để thực thi và quay video:
+python .agents/skills/browser-automation/scripts/recorder.py --url "{URL}" --steps "{TRÍCH_XUẤT_CÁC_BƯỚC_THÀNH_CÚ_PHÁP_CLIP_Hợp_lệ}" --output "tc-{id}.webm"
 
 Điều kiện trước khi test:
 {Điều kiện — lấy nguyên từ file .md}
@@ -104,7 +106,7 @@ Kết quả mong đợi:
 {Kết quả — lấy nguyên từ file .md}
 
 Sau khi thực hiện xong:
-1. Kết thúc và lưu video playback (recording) tại tests/recordings/.
+1. Kết thúc và lưu video playback tại tests/recordings/tc-{id}.webm.
 2. Trả về: ĐẠT hoặc KHÔNG ĐẠT.
 3. Nếu KHÔNG ĐẠT: Mô tả chính xác bước nào gặp lỗi và hiện tượng quan sát được trong video.
 ```
