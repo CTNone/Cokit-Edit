@@ -37,7 +37,7 @@ COLUMN_ALIASES = {
     ],
     "module": [
         "module", "feature", "tính năng", "chức năng", "category",
-        "area", "scope", "nhóm", "phân loại",
+        "area", "scope", "nhóm", "phân loại", "Description", "mô tả",
     ],
     "priority": [
         "priority", "mức độ", "ưu tiên", "độ ưu tiên", "mức ưu tiên",
@@ -53,7 +53,7 @@ COLUMN_ALIASES = {
         "actions", "action", "thao tác", "nội dung kiểm thử",
     ],
     "expected": [
-        "expected", "expected result", "kết quả mong đợi", "kết quả",
+        "expected", "expected result", "kết quả mong đợi", "kết quả mong muốn", "kết quả",
         "expected outcome", "result", "kết quả kỳ vọng", "mong đợi",
     ],
     "notes": [

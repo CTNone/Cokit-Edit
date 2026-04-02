@@ -107,8 +107,10 @@ Kết quả mong đợi:
 
 Sau khi thực hiện xong:
 1. Kết thúc và lưu video playback tại tests/recordings/tc-{id}.webm.
-2. Trả về: ĐẠT hoặc KHÔNG ĐẠT.
-3. Nếu KHÔNG ĐẠT: Mô tả chính xác bước nào gặp lỗi và hiện tượng quan sát được trong video.
+2. **SO SÁNH:** Đối chiếu "Kết quả thực tế" với "Kết quả mong đợi".
+3. Trả về: ĐẠT hoặc KHÔNG ĐẠT.
+4. Nếu KHÔNG ĐẠT: Mô tả chính xác bước nào gặp lỗi và sự khác biệt so với mong đợi.
+5. **CẤM VƯỢT QUYỀN:** Tuyệt đối không tự ý thực hiện các bước không có trong kịch bản (ví dụ: tự đăng ký khi login fail) để "giả vờ" vượt qua testcase.
 ```
 
 ### Bước 3.3 — Cập nhật kết quả vào file .md (ngay sau mỗi test)
@@ -207,7 +209,8 @@ Sau khi chạy hết tất cả test case, tạo file báo cáo tại `tests/rep
 
 - **PHẢI** dừng ở Phase 2 và chờ tester xác nhận trước khi chạy
 - **PHẢI** ghi lại toàn bộ quá trình test bằng **Video Recording** cho mỗi test case — KHÔNG dùng ảnh chụp đơn lẻ
-- **KHÔNG** bỏ qua test case mà không có lý do rõ ràng
+- **NGHIÊM CẤM VƯỢT QUYỀN:** Chỉ thực hiện chính xác những gì ghi trong file. Không tự ý sửa lỗi hệ thống hoặc thêm bước ngoài kịch bản.
+- **SO SÁNH KẾT QUẢ:** Kết quả thực tế phải được đối chiếu với Kết quả mong đợi để đưa ra kết luận ĐẠT/KHÔNG ĐẠT.
 - **PHẢI** cập nhật file `.md` ngay sau mỗi test — không gộp
 - Nếu app chưa chạy hoặc URL không tồn tại → báo lỗi và dừng
 

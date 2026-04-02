@@ -10,8 +10,8 @@ Quy trình kiểm thử thủ công: **Excel → Markdown → Review → Thực 
 ```
 [1] Kiểm tra file input (.xlsx hoặc .md)
 [2] DỪNG — tester review và chọn danh sách TC cần thực thi (tất cả hoặc một phần)
-[3] Đọc danh sách đã chọn từ .md → thực thi lần lượt → ghi bằng chứng video playback
-[4] Cập nhật kết quả vào .md → tạo báo cáo với minh chứng video
+[3] Đọc danh sách đã chọn từ .md → thực thi lần lượt → so sánh Kết quả thực tế với Kết quả mong đợi
+[4] Cập nhật kết quả vào .md ngay lập tức → tạo báo cáo với minh chứng video
 ```
 
 ---
@@ -52,7 +52,9 @@ Nếu tester chọn chạy 1 phần (ví dụ: `TC-001, TC-003`) -> Agent chỉ 
 
 **Nguyên tắc quan trọng:**
 - Đọc file `.md` → lấy danh sách test case theo thứ tự trong file
-- Thực hiện đúng theo **"Các bước thực hiện"** trong từng test case
+- **NGHIÊM CẤM VƯỢT QUYỀN:** Chỉ thực hiện chính xác những gì ghi trong file. 
+  * Ví dụ: Nếu bước 1 là "Đăng nhập" và bị lỗi do tài khoản chưa đăng ký, Agent PHẢI báo lỗi và dừng tại đó. KHÔNG được tự ý "vượt qua" bằng cách tự đi đăng ký tài khoản rồi quay lại đăng nhập.
+- **SO SÁNH KẾT QUẢ:** Kết quả thực tế phải được so sánh trực tiếp với "Kết quả mong đợi" để đưa ra kết luận ĐẠT/KHÔNG ĐẠT.
 - Ghi lại bằng chứng **sau mỗi test** (không gộp)
 - Cập nhật kết quả vào bảng ngay sau khi chạy xong từng test
 
@@ -87,8 +89,10 @@ Kết quả mong đợi:
 
 Sau khi thực hiện xong:
 1. Kết thúc và lưu video playback (recording).
-2. Trả về: ĐẠT hoặc KHÔNG ĐẠT.
-3. Nếu KHÔNG ĐẠT: Mô tả chính xác bước nào gặp lỗi và hiện tượng quan sát được trong video.
+2. So sánh hiện tượng quan sát được với "Kết quả mong đợi".
+3. Trả về: ĐẠT hoặc KHÔNG ĐẠT.
+4. Nếu KHÔNG ĐẠT: Mô tả chính xác bước nào gặp lỗi và sự khác biệt so với kết quả mong đợi.
+5. **CẤM:** Không được tự ý sửa lỗi hệ thống hoặc thực hiện các bước không có trong test case để "cố bám trụ" cho xong test.
 ```
 
 ### Bước 3.3 — Cập nhật kết quả video sau mỗi test
