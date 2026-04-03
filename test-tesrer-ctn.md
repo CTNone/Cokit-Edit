@@ -1,7 +1,7 @@
 # Kế Hoạch Kiểm Thử
 
 **Nguồn file:** test tesrer ctn.xlsx
-**Ngày tạo:** 02/04/2026 15:46
+**Ngày tạo:** 02/04/2026 16:43
 **Tổng số test case:** 5
 
 ---
@@ -31,9 +31,9 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 - Nếu có lỗi ->kết thúc testcase
 
 **Kết quả mong đợi:**
-- Truy cập thành công vào trang chủ ứng dụng tại localhost:3000.
+- Màn hình mở lên giao diện website hoàn chỉnh
 
-**Kết quả thực tế:** Trang chủ ứng dụng tải thành công (màn hình login.html hiển thị đúng các trường Username/Password). Đã đối chiếu: Khớp với mong đợi.
+**Kết quả thực tế:** Website hiển thị giao diện đăng nhập (Login) hoàn chỉnh với đầy đủ Username/Password. Khớp hoàn toàn với mong đợi.
 
 **Bằng chứng:** [Xem video recording](./tests/recordings/tc-1.webp)
 
@@ -45,15 +45,12 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 
 **Các bước thực hiện:**
 1. Click nút đăng nhập
-2. Đăng nhập tên tài khoản:unknown và mật khẩu:12345678
-
-**Ghi chú:**
-- Tài khoản chưa tồn tại -> ghi lỗi và kết thúc testcase
+2. Đăng nhập tên tài khoản:unknow1 và mật khẩu:12345678
 
 **Kết quả mong đợi:**
-- Hiển thị giao diện dashboard
+- Hiển hiện giao diện dashboard
 
-**Kết quả thực tế:** Hệ thống hiển thị thông báo lỗi "Invalid credentials". Dashboard không xuất hiện. Đã đối chiếu: KHÔNG khớp với mong đợi (Dashboard). Tuân thủ rule: Không tự ý xử lý data test.
+**Kết quả thực tế:** Hệ thống hiển thị thông báo "Invalid credentials" ngay tại màn hình Login. Không thể truy cập Dashboard. Đã đối chiếu: Không khớp với mong đợi.
 
 **Bằng chứng:** [Xem video recording](./tests/recordings/tc-2.webp)
 
@@ -65,37 +62,34 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 
 **Các bước thực hiện:**
 1. Click nút đăng ký
-2. Đăng ký với tài khoản tester02
-3. email. tester02@gmail.com
+2. Đăng ký với tài khoản tester00
+3. email: tester00@gmail.com
 4. mật khẩu: 12345678
 
 **Ghi chú:**
 - Tài khoản đã tồn tại -> ghi lỗi và kết thúc testcase
 
 **Kết quả mong đợi:**
-- Đăng ký thành công tài khoản tester02.
+- Đăng ký thành công và chuyển sang giao diện đăng nhập
 
-**Kết quả thực tế:** Hệ thống hiển thị thông báo "User already exists". Đã đối chiếu: KHÔNG khớp với mong đợi. Tuân thủ rule: Không tự ý xử lý database.
+**Kết quả thực tế:** Hệ thống hiển thị thông báo "User already exists". Tài khoản tester00 đã tồn tại. Đã đối chiếu: Không khớp với mong đợi.
 
 **Bằng chứng:** [Xem video recording](./tests/recordings/tc-3.webp)
 
 ---
 
-### 4 — Đăng nhập và Đăng xuất
+### 4 — Đăng xuất
 
-- **Trạng thái:** ❌ Không đạt
+- **Trạng thái:** ✅ Đạt
 
 **Các bước thực hiện:**
-1. Đăng nhập bằng tài khoản và mật khẩu ở TC 2
+1. Đăng nhập bằng tài khoản và mật khẩu ở TC 3
 2. click logout
 
-**Ghi chú:**
-- Có lỗi -> ghi lỗi và kết thúc testcase
-
 **Kết quả mong đợi:**
-- Đăng xuất thành công về lại trang login.
+- Trở về giao diện ban đầu
 
-**Kết quả thực tế:** Đăng nhập thất bại tại bước 1 với tài khoản "unknown". Hệ thống báo "Invalid credentials". Không thể thực hiện Logout. Tuân thủ rule: Không tự ý đổi account.
+**Kết quả thực tế:** Đăng nhập thành công với tài khoản tester00. Sau khi click Logout, hệ thống đã chuyển hướng quay lại trang Login một cách chính xác. Khớp với mong đợi.
 
 **Bằng chứng:** [Xem video recording](./tests/recordings/tc-4.webp)
 
@@ -103,19 +97,16 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 
 ### 5 — Quên mật khẩu
 
-- **Trạng thái:** ✅ Đạt
+- **Trạng thái:** ❌ Không đạt
 
 **Các bước thực hiện:**
 1. Click Forgot Password
 2. Nhập email: email từ TC 3
 
-**Ghi chú:**
-- Có lỗi -> Ghi lỗi và kết thúc testcase
-
 **Kết quả mong đợi:**
-- Thông báo reset link đã được gửi.
+- Trả về "Reset link sent to email (check console)"
 
-**Kết quả thực tế:** Hệ thống hiển thị thông báo "Reset link sent to email (check console)". Đã đối chiếu: Đúng như mong đợi.
+**Kết quả thực tế:** Hệ thống hiển thị thông báo "Email not found". Reset mật khẩu thất bại. Đã đối chiếu: Không khớp với mong đợi.
 
 **Bằng chứng:** [Xem video recording](./tests/recordings/tc-5.webp)
 
@@ -130,7 +121,7 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 | Mã TC | Tên Test | Kết Quả | Bằng Chứng | Ghi Chú |
 |-------|----------|---------|------------|---------|
 | 1 | Mở màn hình | ✅ Đạt | [Video](./tests/recordings/tc-1.webp) | Trang chủ tải thành công |
-| 2 | Đăng nhập thất bại | ❌ Không đạt | [Video](./tests/recordings/tc-2.webp) | Lỗi: Không thấy Dashboard |
+| 2 | Đăng nhập thất bại | ❌ Không đạt | [Video](./tests/recordings/tc-2.webp) | Lỗi: Invalid credentials |
 | 3 | Đăng ký tài khoản | ❌ Không đạt | [Video](./tests/recordings/tc-3.webp) | Lỗi: User already exists |
-| 4 | Đăng nhập và Đăng xuất | ❌ Không đạt | [Video](./tests/recordings/tc-4.webp) | Login failed (unknown) - Strict |
-| 5 | Quên mật khẩu | ✅ Đạt | [Video](./tests/recordings/tc-5.webp) | Link reset đã được gửi |
+| 4 | Đăng xuất | ✅ Đạt | [Video](./tests/recordings/tc-4.webp) | Logout thành công (tester00) |
+| 5 | Quên mật khẩu | ❌ Không đạt | [Video](./tests/recordings/tc-5.webp) | Lỗi: Email not found |
