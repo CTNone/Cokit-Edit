@@ -1,64 +1,99 @@
 ---
-description: Execute implementation from a plan file — cook the code following plan phases
+description: Smart feature implementation with automatic workflow detection
 ---
 
-## Role
+## Context
+Task or plan path:
+<task>${input}</task>
 
-You are a **Senior Fullstack Developer** executing implementation phases from a plan with strict discipline.
+**Principles:** YAGNI, KISS, DRY | Token efficiency | Concise reports
 
-**Principles**: YAGNI · KISS · DRY. Follow `./docs/code-standards.md` if it exists.
+## Smart Intent Detection
 
-## Pre-Implementation Checklist
+| Input Pattern | Detected Mode | Behavior |
+|---------------|---------------|----------|
+| Path to `plan.md` or `phase-*.md` | code | Execute existing plan |
+| Contains "fast", "quick" | fast | Skip research, scout→plan→code |
+| Contains "trust me", "auto" | auto | Auto-approve all steps |
+| Lists 3+ features OR "parallel" | parallel | Multi-agent execution |
+| Contains "no test", "skip test" | no-test | Skip testing step |
+| Default | interactive | Full workflow with user input |
 
-Before writing any code:
-1. Read the plan file (typically `plans/{date}-{slug}/plan.md`)
-2. Read `./docs/codebase-summary.md` if available
-3. Read `./docs/code-standards.md` if available
-4. Verify all dependencies from previous phases are complete
-5. Identify the specific phase to implement
+## Workflow Overview
 
-## Execution Process
-
-1. **Phase Analysis** — Read assigned phase file `phase-XX-*.md`
-2. **Implementation** — Execute steps sequentially as listed
-3. **Quality Assurance**
-   - Run type checks: `npm run typecheck` or equivalent
-   - Run tests: `npm test` or equivalent
-   - Fix any errors before reporting
-4. **Completion Report** — Files modified, tasks completed, test status
-
-## Completion Report Format
-
-```markdown
-## Phase Implementation Report
-
-### Executed Phase
-- Phase: [phase-XX-name]
-- Plan: [plan directory path]
-- Status: [completed/blocked/partial]
-
-### Files Modified
-[List files changed]
-
-### Tasks Completed
-[Checked list matching phase todo items]
-
-### Tests Status
-- Type check: [pass/fail]
-- Unit tests: [pass/fail]
-
-### Issues Encountered
-[Any conflicts, blockers, or deviations]
-
-### Next Steps
-[Follow-up tasks]
+```
+[Intent Detection] → [Research?] → [Review] → [Plan] → [Review] → [Implement] → [Simplify] → [Review] → [Test?] → [Review] → [Finalize]
 ```
 
-## Next Steps
+**Default (non-auto):** Stops at `[Review]` gates for human approval before each major step.
+**Auto mode (`--auto`):** Skips human review gates, implements all phases continuously.
+
+| Mode | Research | Testing | Review Gates | Phase Progression |
+|------|----------|---------|--------------|-------------------|
+| interactive | ✓ | ✓ | **User approval at each step** | One at a time |
+| auto | ✓ | ✓ | Auto if score≥9.5 | All at once (no stops) |
+| fast | ✗ | ✓ | User approval at each step | One at a time |
+| parallel | Optional | ✓ | User approval at each step | Parallel groups |
+| no-test | ✓ | ✗ | User approval at each step | One at a time |
+| code | ✗ | ✓ | User approval at each step | Per plan |
+
+## Step Output Format
+
+```
+✓ Step [N]: [Brief status] - [Key metrics]
+```
+
+## Blocking Gates (Non-Auto Mode)
+
+Human review required at these checkpoints (skipped with `--auto`):
+- **Post-Research:** Review findings before planning
+- **Post-Plan:** Approve plan before implementation
+- **Post-Implementation:** Approve code before testing
+- **Post-Testing:** 100% pass + approve before finalize
+
+**Always enforced (all modes):**
+- **Testing:** 100% pass required (unless no-test mode)
+- **Code Review:** User approval OR auto-approve (score≥9.5, 0 critical)
+- **Finalize:** docs-manager must complete
+
+## Required Agents
+
+| Phase | Agent |
+|-------|-------|
+| Research | `researcher` agent (parallel, optional in fast) |
+| Scout | `scout` agent |
+| Plan | `planner` agent |
+| UI Work | `ui-ux-designer` agent |
+| Implement | `fullstack-developer` agent (parallel mode) |
+| Simplify | `code-simplifier` agent (post-implement) |
+| Testing | `tester`, `debugger` agents |
+| Review | `code-reviewer` agent |
+| Finalize | `docs-manager`, `git-manager` agents |
+
+## Process
+
+1. **Detect Mode**: Analyze input to determine workflow mode
+2. **Scout**: Use `/ck-scout` to discover relevant files
+3. **Research** (if applicable): Gather technical context
+4. **Plan**: Create or load implementation plan
+5. **Implement**: Execute plan phases (use `fullstack-developer` agent in parallel mode)
+6. **Simplify**: `code-simplifier` agent refines implemented code for clarity
+7. **Test**: Run tests and validate
+8. **Review**: Code review with quality gates
+9. **Finalize**: Update docs, commit changes
+
+---
+
+## Suggested Next Steps
 
 | Command | Description |
 |---------|-------------|
-| `/ck-simplify` | Simplify the code |
-| `/ck-review` | Code review |
 | `/ck-test` | Run tests |
-| `/ck-debug` | Debug issues |
+| `/ck-review` | Code review |
+| `/ck-git` | Commit changes |
+| `/ck-spec-implement` | Spec-driven implementation instead |
+
+---
+> **⚡ SYSTEM FALLBACK ROUTER:**
+> Môi trường AI hiện tại của bạn có thể không hỗ trợ trigger slash command trực tiếp. 
+> Nếu bạn cần gọi các lệnh như `/ck-spec-implement, /ck-scout, /ck-test, /ck-git, /ck-review`, bạn BẮT BUỘC phải đọc nội dung của các file tương ứng tại `./.agents/workflows/tên-lệnh.md` và tự động thực thi quy trình hướng dẫn trong đó để hoàn thành công việc.

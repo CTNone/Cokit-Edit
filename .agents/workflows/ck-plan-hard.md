@@ -1,16 +1,16 @@
 ---
-description: No research. Only analyze and create an implementation plan
+description: Research, analyze, and create an implementation plan
 ---
 ## Variant Notice
 **IMPORTANT — Read before proceeding.**
-`ck-plan-fast` is an internal mode for quick planning without research — it is meant to be selected automatically by AI when you run `/ck-plan`.
+`ck-plan-hard` is an internal mode for deep research + planning — it is meant to be selected automatically by AI when you run `/ck-plan`.
 You don't need to call this directly. Just use `/ck-plan` and AI will pick the right mode for you.
 Before executing, you MUST output the following message **exactly as written** and wait for user response:
 
 ---
 **Variant Notice**
 
-`ck-plan-fast` is an internal mode for quick planning without research — it is meant to be selected automatically by AI when you run `/ck-plan`.
+`ck-plan-hard` is an internal mode for deep research + planning — it is meant to be selected automatically by AI when you run `/ck-plan`.
 You don't need to call this directly. Just use `/ck-plan` and AI will pick the right mode for you.
 
 Do you want to continue anyway, or switch to `/ck-plan`? **[Continue / Switch to /ck-plan]**
@@ -21,7 +21,7 @@ Only proceed if user explicitly confirms Continue.
 If user chooses "Switch to /ck-plan", run  immediately — do NOT ask user to re-enter their input.
 
 
-Think.
+Think harder.
 Activate `planning` skill.
 
 ## Your mission
@@ -37,36 +37,62 @@ Check the `## Plan Context` section in the injected context:
 - If "Plan: none" → Create new plan using naming from `## Naming` section.
 
 ## Workflow
-Use `planner` agent to:
 1. If creating new: Create directory using `Plan dir:` from `## Naming` section, then run `node $HOME/.copilot/scripts/set-active-plan.cjs {plan-dir}`
    If reusing: Use the active plan path from Plan Context.
    Make sure you pass the directory path to every agent during the process.
 2. Follow strictly to the "Plan Creation & Organization" rules of `planning` skill.
-3. Analyze the codebase by reading `codebase-summary.md`, `code-standards.md`, `system-architecture.md` and `project-overview-pdr.md` file.
-4. Gathers all information and create an implementation plan of this task.
-5. Ask user to review the plan.
+3. Use multiple `researcher` agents (max 2 agents) in parallel to research for this task:
+   Each agent research for a different aspect of the task and are allowed to perform max 5 tool calls.
+4. Analyze the codebase by reading `codebase-summary.md`, `code-standards.md`, `system-architecture.md` and `project-overview-pdr.md` file.
+   **ONLY PERFORM THIS FOLLOWING STEP IF `codebase-summary.md` is not available or older than 3 days**: Use `/scout <instructions>` slash command to search the codebase for files needed to complete the task.
+5. Main agent gathers all research and scout report filepaths, and pass them to `planner` agent with the prompt to create an implementation plan of this task.
+6. Main agent receives the implementation plan from `planner` agent, and ask user to review the plan
+
+## Post-Plan Validation (Optional)
+
+After plan creation, offer validation interview to confirm decisions before implementation.
+
+**Check `## Plan Context` → `Validation: mode=X, questions=MIN-MAX`:**
+
+| Mode | Behavior |
+|------|----------|
+| `prompt` | Ask user: "Validate this plan with a brief interview?" → Yes (Recommended) / No |
+| `auto` | Automatically execute `/ck-plan-validate {plan-path}` |
+| `off` | Skip validation step entirely |
+
+**If mode is `prompt`:** Present the options above directly in your response and wait for user to choose.
+**If user chooses validation or mode is `auto`:** Execute `/ck-plan-validate {plan-path}`.
 
 ## Context Reminder (MANDATORY)
 
-**IMPORTANT:** After plan creation, you MUST remind the user:
+**IMPORTANT:** If user skips validation (chooses "No" or mode is `off`), you MUST remind them:
 
 > **Best Practice:** Run `/clear` before implementing to start with fresh context.
 > Then run `/cook {plan-path}` to begin implementation.
 
-This reminder is **NON-NEGOTIABLE** - always output it after presenting the plan.
+This reminder is **NON-NEGOTIABLE** when validation is skipped.
 
 ## Output Requirements
 
 **Plan Directory Structure** (use `Plan dir:` from `## Naming` section)
 ```
 {plan-dir}/
+├── research/
+│   ├── researcher-XX-report.md
+│   └── ...
 ├── reports/
 │   ├── XX-report.md
+│   └── ...
+├── scout/
+│   ├── scout-XX-report.md
 │   └── ...
 ├── plan.md
 ├── phase-XX-phase-name-here.md
 └── ...
 ```
+
+**Research Output Requirements**
+- Ensure every research markdown report remains concise (≤150 lines) while covering all requested topics and citations.
 
 **Plan File Specification**
 - Every `plan.md` MUST start with YAML frontmatter:
@@ -86,11 +112,11 @@ This reminder is **NON-NEGOTIABLE** - always output it after presenting the plan
 - For each phase, create `{plan-dir}/phase-XX-phase-name-here.md` containing the following sections in order: Context links (reference parent plan, dependencies, docs), Overview (date, description, priority, implementation status, review status), Key Insights, Requirements, Architecture, Related code files, Implementation Steps, Todo list, Success Criteria, Risk Assessment, Security Considerations, Next steps.
 
 ## Important Notes
-- **IMPORTANT:** Ensure token consumption efficiency while maintaining high quality.
-- **IMPORTANT:** Analyze the skills catalog and activate the skills that are needed for the task during the process.
-- **IMPORTANT:** Sacrifice grammar for the sake of concision when writing reports.
-- **IMPORTANT:** In reports, list any unresolved questions at the end, if any.
-- **IMPORTANT**: **Do not** start implementing.
+**IMPORTANT:** Analyze the skills catalog and activate the skills that are needed for the task during the process.
+**IMPORTANT:** Ensure token efficiency while maintaining high quality.
+**IMPORTANT:** Sacrifice grammar for the sake of concision when writing reports.
+**IMPORTANT:** In reports, list any unresolved questions at the end, if any.
+**IMPORTANT**: **Do not** start implementing.
 
 ---
 
@@ -102,7 +128,7 @@ This reminder is **NON-NEGOTIABLE** - always output it after presenting the plan
 | `/ck-cook` | Implement plan |
 | `/ck-test` | Run tests and analyze results |
 | `/ck-fix` | Analyze and fix issues |
-| `/ck-spec-specify` | Too complex? Switch to spec-driven flow |
+| `/ck-spec-specify` | Need formal spec? Switch to spec-driven flow |
 
 ---
 > **⚡ SYSTEM FALLBACK ROUTER:**

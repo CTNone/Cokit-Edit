@@ -1,74 +1,79 @@
 ---
-description: Research, analyze, and create comprehensive implementation plans for new features or complex technical solutions
+description: Intelligent plan creation with prompt enhancement
 ---
 
-## Role
+**Analyze task and route to the right planning mode:**
+<task>${input}</task>
 
-You are an **Expert Planner** with deep expertise in software architecture, system design, and technical research.
+## Decision Tree
 
-**Principles**: YAGNI · KISS · DRY — every solution must honor these.
+**1. Check for existing plan:**
+- Check `## Plan Context` section in injected context
+- If "Plan:" shows a path → Active plan exists. Ask user: "Active plan found: {path}. Continue with this? [Y/n]"
+- If "Suggested:" shows a path → Branch-matched hint. Ask user to activate or create new.
+- If "Plan: none" → Proceed to step 2.
 
-## Core Mental Models
+**2. Route by complexity:**
 
-- **Decomposition** — Break huge goals into small, concrete tasks
-- **Working Backwards** — Start from desired outcome, identify steps to get there
-- **Second-Order Thinking** — Ask "And then what?" to understand hidden consequences
-- **Root Cause Analysis** — Dig past the surface to find the *real* problem
-- **80/20 Rule (MVP)** — 20% of features deliver 80% of value
-- **Risk & Dependency Management** — What could go wrong? Who/what does this depend on?
+**A) Simple/Quick Tasks** (keywords: small, quick, simple, straightforward, single file, minor, tweak, < 2 hours)
+→ `/ck-plan-fast <detailed-instructions-prompt>`
 
-## Workflow
+**B) Complex/Research-Heavy Tasks** (keywords: complex, research, unfamiliar, architecture, multi-component, integration, large, major, multi-day)
+→ `/ck-plan-hard <detailed-instructions-prompt>`
 
-1. **Pre-Creation Check** — Check for existing plans in `plans/` directory
-2. **Mode Detection** — Auto-detect complexity from task description
-3. **Research Phase** — Investigate approaches and best practices
-4. **Codebase Analysis** — Read `./docs/` if available
-5. **Plan Documentation** — Write comprehensive plan
-6. **Task Breakdown** — Create checklist from plan phases
+**C) Validate Existing Plan** (keywords: validate, review plan, check plan, verify assumptions)
+→ `/ck-plan-validate <path-to-plan>`
 
-## Plan File Format
+**D) Default/Medium Tasks** (anything else)
+→ Execute planning workflow below directly.
 
-Every `plan.md` MUST start with YAML frontmatter:
+## Workflow (for Default/Medium tasks)
 
-```yaml
+- Activate `planning` skill.
+- Analyze the given task and ask clarifying questions directly if needed. Wait for user response before proceeding.
+- Note: `detailed-instructions-prompt` is **an enhanced prompt** that describes the task in detail based on the provided task description.
+
+## Post-Plan Validation (Optional)
+
+After plan creation, offer validation for non-trivial plans.
+
+Check `## Plan Context` → `Validation: mode=X, questions=MIN-MAX`:
+
+| Mode | Behavior |
+|------|----------|
+| `prompt` | Ask user: "Validate this plan with a brief interview?" → Yes (Recommended) / No |
+| `auto` | Automatically execute `/ck-plan-validate {plan-path}` |
+| `off` | Skip validation step entirely |
+
+If user chooses validation or mode is `auto`: Execute `/ck-plan-validate {plan-path}`.
+
+## Notes
+- `detailed-instructions-prompt` = enhanced prompt describing task in detail
+- If unclear about complexity, default to this prompt's workflow (medium)
+- Fast plans skip validation by default
+- Hard plans recommend validation
+
+## Important Notes
+**IMPORTANT:** Analyze the skills catalog and activate the skills that are needed for the task during the process.
+**IMPORTANT:** Sacrifice grammar for the sake of concision when writing reports.
+**IMPORTANT:** Ensure token efficiency while maintaining high quality.
+**IMPORTANT:** In reports, list any unresolved questions at the end, if any.
+**IMPORTANT**: **Do not** start implementing.
+
 ---
-title: "{Brief title}"
-description: "{One sentence for card preview}"
-status: pending
-priority: P2
-effort: {sum of phases, e.g., 4h}
-tags: [relevant, tags]
-created: {YYYY-MM-DD}
----
-```
-
-**Status values:** `pending`, `in-progress`, `completed`, `cancelled`
-**Priority values:** `P1` (high), `P2` (medium), `P3` (low)
-
-## Plan Directory Structure
-
-```
-plans/
-└── {YYMMDD}-{slug}/
-    ├── research/
-    │   └── researcher-XX-report.md
-    ├── reports/
-    │   └── XX-report.md
-    ├── plan.md
-    └── phase-XX-phase-name.md
-```
-
-## Output
-
-- **DO NOT** implement — only create plans
-- Respond with plan file path and summary
-- Include code snippets/pseudocode when clarifying
-- Provide multiple options with trade-offs when appropriate
 
 ## Suggested Next Steps
 
 | Command | Description |
 |---------|-------------|
-| `/ck-cook` | Start implementing the plan |
-| `/ck-review` | Review after implementation |
-| `/ck-test` | Run tests |
+| `/ck-plan-validate` | Validate plan with critical questions |
+| `/ck-spec-tasks` | Break plan into actionable tasks |
+| `/ck-cook` | Implement plan |
+| `/ck-test` | Run tests and analyze results |
+| `/ck-fix` | Analyze and fix issues |
+| `/ck-spec-specify` | Need detailed spec first? Start spec-driven flow |
+
+---
+> **⚡ SYSTEM FALLBACK ROUTER:**
+> Môi trường AI hiện tại của bạn có thể không hỗ trợ trigger slash command trực tiếp. 
+> Nếu bạn cần gọi các lệnh như `/ck-spec-specify, /ck-fix, /ck-test, /ck-spec-tasks, /ck-plan-validate, /ck-cook`, bạn BẮT BUỘC phải đọc nội dung của các file tương ứng tại `./.agents/workflows/tên-lệnh.md` và tự động thực thi quy trình hướng dẫn trong đó để hoàn thành công việc.

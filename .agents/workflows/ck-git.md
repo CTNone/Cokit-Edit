@@ -1,23 +1,23 @@
 ---
-description: Git operations with conventional commits — stage, commit, push, or create PRs
+description: Git operations with conventional commits
 ---
 
-## Role
-
-You are a **Git Manager** handling version control operations with clean conventional commits.
-
-**Security First**: Always scan for secrets before committing.
+## Context
+Git operation:
+<operation>${input}</operation>
 
 ## Arguments
 
 | Arg | Description |
 |-----|-------------|
 | `cm` | Stage files & create commits |
-| `cp` | Stage files, create commits, and push |
-| `pr` | Create Pull Request `[to-branch] [from-branch]` |
-| `merge` | Merge `[to-branch] [from-branch]` |
+| `cp` | Stage files, create commits and push |
+| `pr` | Create Pull Request [to-branch] [from-branch] |
+| `merge` | Merge [to-branch] [from-branch] |
 
-**Defaults:** `to-branch` = main, `from-branch` = current branch
+**Defaults:**
+- `to-branch`: main
+- `from-branch`: current branch
 
 ## Core Workflow
 
@@ -27,21 +27,22 @@ git add -A && git diff --cached --stat && git diff --cached --name-only
 ```
 
 ### Step 2: Security Check
+Scan for secrets before commit:
 ```bash
 git diff --cached | grep -iE "(api[_-]?key|token|password|secret|credential)"
 ```
-**If secrets found:** STOP — warn user, suggest `.gitignore`, do NOT commit.
+**If secrets found:** STOP, warn user, suggest `.gitignore`.
 
 ### Step 3: Split Decision
 
 **Split commits if:**
 - Different types mixed (feat + fix, code + docs)
-- Multiple unrelated scopes (auth + payments)
+- Multiple scopes (auth + payments)
 - Config/deps + code mixed
-- Files > 10 unrelated files
+- FILES > 10 unrelated
 
 **Single commit if:**
-- Same type/scope, files ≤ 3, lines ≤ 50
+- Same type/scope, FILES ≤ 3, LINES ≤ 50
 
 ### Step 4: Commit
 ```bash
@@ -60,7 +61,6 @@ git commit -m "type(scope): description"
 | `perf` | Performance improvement |
 | `test` | Adding/updating tests |
 | `chore` | Maintenance tasks |
-| `ci` | CI/CD configuration |
 
 ## Output Format
 ```
@@ -69,6 +69,15 @@ git commit -m "type(scope): description"
 ✓ commit: HASH type(scope): description
 ✓ pushed: yes/no
 ```
+
+## Error Handling
+
+| Error | Action |
+|-------|--------|
+| Secrets detected | Block commit, show files |
+| No changes | Exit cleanly |
+| Push rejected | Suggest `git pull --rebase` |
+| Merge conflicts | Suggest manual resolution |
 
 ## Pull Request Format
 
@@ -82,18 +91,16 @@ gh pr create --title "type(scope): description" --body "## Summary
 - [ ] Test B"
 ```
 
-## Error Handling
+---
 
-| Error | Action |
-|-------|--------|
-| Secrets detected | Block commit, show affected files |
-| No changes | Exit cleanly with message |
-| Push rejected | Suggest `git pull --rebase` |
-| Merge conflicts | Suggest manual resolution |
-
-## Next Steps
+## Suggested Next Steps
 
 | Command | Description |
 |---------|-------------|
 | `/ck-test` | Run tests before push |
 | `/ck-review` | Code review |
+
+---
+> **⚡ SYSTEM FALLBACK ROUTER:**
+> Môi trường AI hiện tại của bạn có thể không hỗ trợ trigger slash command trực tiếp. 
+> Nếu bạn cần gọi các lệnh như `/ck-review, /ck-test`, bạn BẮT BUỘC phải đọc nội dung của các file tương ứng tại `./.agents/workflows/tên-lệnh.md` và tự động thực thi quy trình hướng dẫn trong đó để hoàn thành công việc.

@@ -1,59 +1,118 @@
 ---
-description: Debug and investigate issues systematically — analyze logs, trace errors, identify root causes
+description: Debug systematically with root cause analysis before fixes
 ---
 
-## Role
+## Context
+Issue to debug:
+<issue>${input}</issue>
 
-You are a **Senior Software Engineer** specializing in debugging and system analysis.
+## Core Principle
 
-**IMPORTANT**: Use `sequential-thinking` to break complex debugging into sequential steps.
+**NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST**
 
-## Core Competencies
+Random fixes waste time and create new bugs. Find the root cause, fix at source, validate at every layer, verify before claiming success.
 
-- Issue Investigation — systematically diagnosing and resolving incidents
-- System Behavior Analysis — tracing execution flows and anomalies
-- Log Analysis — collecting and analyzing logs from application layers
-- Performance Optimization — identifying bottlenecks
+## When to Use
 
-## Investigation Methodology
+**Always use for:** Test failures, bugs, unexpected behavior, performance issues, build failures, integration problems, before claiming work complete
 
-1. **Initial Assessment**
-   - Gather symptoms and error messages
-   - Identify affected components and timeframes
-   - Check for recent changes
+**Especially when:** Under time pressure, "quick fix" seems obvious, tried multiple fixes, don't fully understand issue, about to claim success
 
-2. **Data Collection**
-   - Examine application logs and error traces
-   - Search the codebase for relevant files
-   - Check `./docs/codebase-summary.md` if it exists
-   - Run relevant tests to reproduce the issue
+## The Four Phases
 
-3. **Analysis Process**
-   - Correlate events across different sources
-   - Identify patterns and anomalies
-   - Trace execution paths through the system
+### Phase 1: Root Cause Investigation
+1. Read error messages completely
+2. Reproduce the issue consistently
+3. Check recent changes (git diff, git log)
+4. Gather evidence before theorizing
 
-4. **Root Cause Identification**
-   - Use systematic elimination to narrow down causes
-   - Validate hypotheses with concrete evidence
-   - Document the chain of events leading to the issue
+### Phase 2: Pattern Analysis
+1. Find working examples in codebase
+2. Compare working vs broken code
+3. Identify what's different
+4. Document findings
 
-5. **Solution Development**
-   - Design targeted fixes
-   - Develop strategies to prevent recurrence
-   - Propose monitoring improvements
+### Phase 3: Hypothesis and Testing
+1. Form theory based on evidence
+2. Test with minimal changes
+3. Verify hypothesis is correct
+4. Document confirmation
 
-## Report Structure
+### Phase 4: Implementation
+1. Create test that catches the bug
+2. Fix at the root cause (not symptom)
+3. Verify fix works
+4. Ensure no regressions
 
-1. **Executive Summary** — Issue description, root cause, recommended solutions
-2. **Technical Analysis** — Timeline, evidence, patterns observed
-3. **Actionable Recommendations** — Immediate fixes, long-term improvements
-4. **Supporting Evidence** — Relevant log excerpts, error traces
+**Key rule:** Complete each phase before proceeding. No fixes without Phase 1.
 
-## Next Steps
+## Root Cause Tracing
+
+When error appears deep in execution:
+1. Start at error location
+2. Trace backward level-by-level
+3. Find where invalid data originated
+4. Fix at source, not at symptom
+
+## Defense-in-Depth
+
+After finding root cause, validate at every layer:
+1. **Entry validation** - Input sanitization
+2. **Business logic** - State validation
+3. **Environment guards** - Config validation
+4. **Debug instrumentation** - Logging
+
+## Verification
+
+**Iron law:** NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
+
+1. Run the command
+2. Read the output
+3. Then claim the result
+
+## Red Flags
+
+Stop and follow process if thinking:
+- "Quick fix for now, investigate later"
+- "Just try changing X and see if it works"
+- "It's probably X, let me fix that"
+- "Should work now" / "Seems fixed"
+- "Tests pass, we're done"
+
+**All mean:** Return to systematic process.
+
+## Output Format
+
+```markdown
+## Debug Report
+
+### Issue Summary
+- What: [Brief description]
+- When: [When it occurs]
+- Impact: [Severity]
+
+### Root Cause
+[Explanation of actual cause]
+
+### Fix Applied
+[What was changed and why]
+
+### Verification
+[Evidence that fix works]
+```
+
+---
+
+## Suggested Next Steps
 
 | Command | Description |
 |---------|-------------|
-| `/ck-fix` | Apply the fix |
 | `/ck-test` | Run tests to verify |
-| `/ck-review` | Code review after fix |
+| `/ck-fix` | Apply fix |
+| `/ck-git` | Commit fix |
+| `/ck-spec-analyze` | Analyze spec consistency |
+
+---
+> **⚡ SYSTEM FALLBACK ROUTER:**
+> Môi trường AI hiện tại của bạn có thể không hỗ trợ trigger slash command trực tiếp. 
+> Nếu bạn cần gọi các lệnh như `/ck-git, /ck-fix, /ck-spec-analyze, /ck-test`, bạn BẮT BUỘC phải đọc nội dung của các file tương ứng tại `./.agents/workflows/tên-lệnh.md` và tự động thực thi quy trình hướng dẫn trong đó để hoàn thành công việc.

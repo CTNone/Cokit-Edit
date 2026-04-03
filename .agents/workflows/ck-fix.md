@@ -1,51 +1,53 @@
 ---
-description: Fix code issues with intelligent routing to the appropriate fix strategy
+description: Analyze and fix issues with intelligent routing
 ---
 
-## Role
-
-You are a **Senior Developer** analyzing and fixing issues intelligently.
-
-**Principles**: YAGNI · KISS · DRY. Fix root causes, not symptoms.
+**Analyze issues and route to specialized fix command:**
+<issues>${input}</issues>
 
 ## Decision Tree
 
 **1. Check for existing plan:**
-- If a markdown plan file exists in `plans/` → follow `/ck-cook` to implement it
+- If markdown plan exists → `/ck-cook <path-to-plan>`
 
 **2. Route by issue type:**
 
-| Issue Type | Keywords | Approach |
-|-----------|----------|----------|
-| **Type Errors** | type, typescript, tsc, type error | Fix types, add proper interfaces/generics |
-| **UI/UX Issues** | ui, ux, design, layout, style, css, responsive | Fix styling, layout, component design |
-| **Test Failures** | test, spec, jest, vitest, failing test | Fix test or fix the code the test covers |
-| **Log Errors** | logs, error logs, stack trace | Analyze logs, trace root cause, fix |
-| **Complex/Multiple** | complex, architecture, multiple issues | Plan first with `/ck-plan`, then implement |
-| **Simple/Quick** | small bug, single file | Fix directly, verify with tests |
+**A) Type Errors** (keywords: type, typescript, tsc, type error)
+→ `/ck-fix-types`
 
-## Fix Process
+**B) UI/UX Issues** (keywords: ui, ux, design, layout, style, visual, button, component, css, responsive)
+→ `/ck-fix-ui <detailed-description>`
 
-1. **Understand** — Read the error/issue fully before touching code
-2. **Trace** — Find the root cause (use 5 Whys if needed)
-3. **Fix** — Apply minimal targeted change
-4. **Verify** — Run tests/typecheck to confirm fix works
-5. **Check side-effects** — Search for similar patterns that might have same bug
+**C) CI/CD Issues** (keywords: github actions, pipeline, ci/cd, workflow, deployment, build failed)
+→ `/ck-fix-ci <github-actions-url-or-description>`
 
-## Output
+**D) Test Failures** (keywords: test, spec, jest, vitest, failing test, test suite)
+→ `/ck-fix-test <detailed-description>`
 
-After fixing:
-```
-✓ Fixed: [brief description of what was changed]
-✓ Root cause: [why it happened]
-✓ Verified: [tests/typecheck pass]
-⚠ Watch out for: [potential related issues]
-```
+**E) Log Analysis** (keywords: logs, error logs, log file, stack trace)
+→ `/ck-fix-logs <detailed-description>`
 
-## Next Steps
+**F) Complex/Multiple Issues** (keywords: complex, architecture, refactor, major, system-wide, multiple components, 2+ unrelated issues)
+→ `/ck-fix-hard <detailed-description>`
+
+**G) Simple/Quick Fixes** (default: small bug, single file, straightforward)
+→ `/ck-fix-fast <detailed-description>`
+
+## Notes
+- `detailed-description` = enhanced prompt describing issue in detail
+- If unclear, ask user for clarification before routing
+- Can combine routes: e.g., multiple type errors + UI issue → `/ck-fix-hard`
+
+---
+
+## Suggested Next Steps
 
 | Command | Description |
 |---------|-------------|
-| `/ck-test` | Run tests after fix |
-| `/ck-review` | Code review |
-| `/ck-git` | Commit the fix |
+| `/ck-test` | Run tests and analyze results |
+| `/ck-git` | Commit changes |
+
+---
+> **⚡ SYSTEM FALLBACK ROUTER:**
+> Môi trường AI hiện tại của bạn có thể không hỗ trợ trigger slash command trực tiếp. 
+> Nếu bạn cần gọi các lệnh như `/ck-fix-types, /ck-git, /ck-fix-hard, /ck-test`, bạn BẮT BUỘC phải đọc nội dung của các file tương ứng tại `./.agents/workflows/tên-lệnh.md` và tự động thực thi quy trình hướng dẫn trong đó để hoàn thành công việc.

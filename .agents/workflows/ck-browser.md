@@ -1,46 +1,62 @@
 ---
-description: Run browser automation with Playwright and record video evidence
+description: Converted workflow
 ---
 
-# Browser Automation (Playwright)
+﻿---
+agent: 'agent'
+description: 'Record browser automation with Playwright and save as video'
+argument-hint: '--url <app-url> --steps "<cmd: target | ...>" --output <filename.webm>'
+tools: ['execute/runInTerminal', 'execute/getTerminalOutput']
+---
 
-**Skill:** `web-testing`, `manual-tester`
+## Context
 
-Use this workflow to automate and record browser interaction sessions, usually for manual test cases or visual verification.
+```
+Run browser automation with recording: <operation>${input}</operation>
+```
 
-## Basic Usage
+## How to execute
 
+Use the `recorder.py` script from the terminal to automate and record browser actions.
+
+**Base Command:**
 ```powershell
 python .agents/skills/browser-automation/scripts/recorder.py --url "<URL>" --steps "<STEPS>" --output "<FILENAME.webm>"
 ```
 
 ### Steps syntax
-Steps are pipe-separated (`|`).
-Format: `cmd: target, value`
+Steps are separated by `|`. Each step follows `cmd: target, value`.
 
-| Step Type | Example |
-|-----------|---------|
-| `click`     | `click: button.login-btn` |
-| `fill`      | `fill: #id, my-value` |
-| `press`     | `press: Enter` |
-| `wait`      | `wait: 2.0` (seconds) |
-| `screenshot`| `screenshot: login-page` |
+| CMD | Format | Description |
+|-----|--------|-------------|
+| `click` | `click: <selector>` | Clicks an element |
+| `fill` | `fill: <selector>, <text>` | Fills an input field |
+| `press` | `press: <key>` | Presses a keyboard key (e.g., Enter, Tab) |
+| `wait` | `wait: <seconds>` | Waits for seconds |
+| `screenshot`| `screenshot: <name>` | Saves screenshot to `tests/recordings/` |
 
-## Workflow
+**Example:**
+To test a login flow:
+```powershell
+python .agents/skills/browser-automation/scripts/recorder.py --url "http://localhost:3000" --steps "fill: #username, <username> | fill: #password, <password> | click: #login-btn | wait: 2.0 | screenshot: logged-in" --output "login-test.webm"
+```
 
-1.  **Configure Environment**: Ensure Playwright is installed via `pip install playwright`.
-2.  **Define Steps**: Break down the test case into a sequence of browser actions.
-3.  **Run with Recording**: Execute the `recorder.py` script from the terminal.
-4.  **Verify Evidence**: Check `tests/recordings/` for the produced `.webm` video.
-5.  **Clean up**: Remove unnecessary or temporary recordings if needed.
+## Tips for the Agent
 
-## Integration Note
+1. **Selector selection**: Try to find unique IDs or data-attributes when possible.
+2. **Timing**: Use `wait: <n>` for transitions or animations if needed.
+3. **Evidence**: Always use `--output` with a descriptive name for the recording.
+4. **Cleanup**: Recordings are stored in `tests/recordings/`.
 
--   **Copilot**: Command `/ck-browser` is configured to use this script.
--   **Automated Tests**: Use this script within `/ck-run-tests` to capture video evidence for each test case automatically.
+## Suggested Next Steps
 
-## Troubleshooting
+| Command | Description |
+|---------|-------------|
+| `/ck-run-tests` | Run a full test plan using this tool |
+| `/ck-debug` | Debug failures found during automation |
 
--   **Selector not found**: If the script fails, double-check the CSS selectors in the step configuration.
--   **Timeout**: Increase `wait` if elements take too long to load.
--   **Headless vs Headed**: Currently set to `headless=False` for visual verification and recording.
+
+---
+> **⚡ SYSTEM FALLBACK ROUTER:**
+> Môi trường AI hiện tại của bạn có thể không hỗ trợ trigger slash command trực tiếp. 
+> Nếu bạn cần gọi các lệnh như `/ck-run-tests, /ck-debug`, bạn BẮT BUỘC phải đọc nội dung của các file tương ứng tại `./.agents/workflows/tên-lệnh.md` và tự động thực thi quy trình hướng dẫn trong đó để hoàn thành công việc.
