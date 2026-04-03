@@ -53,15 +53,13 @@ Test input: <operation>${input}</operation>
 ❓ Bạn muốn chạy test như thế nào?
    [1] Chạy TOÀN BỘ TC trong file
    [2] Chỉ chạy các TC cụ thể: (Ví dụ: TC-001, TC-003)
-   [3] Chỉnh sửa file .md trước khi chạy
-   [4] Hủy
+   [3] Hủy
 ```
 
 **Lưu ý:**
 - Nếu tester chọn [1] hoặc [2] → ghi lại danh sách TC ID sẽ thực thi.
 - Nếu input ban đầu là `.xlsx` → đảm bảo tester đã xem kỹ file `.md` đã convert.
-- Nếu tester chọn [3] → chờ tester chỉnh sửa xong, đọc lại file `.md` mới.
-- Nếu tester chọn [4] → dừng hoàn toàn, không thực thi bất kỳ test nào.
+- Nếu tester chọn [3] → dừng hoàn toàn, không thực thi bất kỳ test nào.
 
 ---
 
@@ -223,5 +221,5 @@ Sau khi chạy hết tất cả test case, tạo file báo cáo tại `tests/rep
 
 ---
 > **⚡ SYSTEM FALLBACK ROUTER:**
-> Môi trường AI hiện tại của bạn có thể không hỗ trợ trigger slash command trực tiếp. 
+> Môi trường AI hiện tại của bạn có thể không hỗ trợ trigger slash command trực tiếp.
 > Nếu bạn cần gọi các lệnh như `/ck-debug, /ck-git, /ck-fix, /ck-run-tests`, bạn BẮT BUỘC phải đọc nội dung của các file tương ứng tại `./.agents/workflows/tên-lệnh.md` và tự động thực thi quy trình hướng dẫn trong đó để hoàn thành công việc.

@@ -6,7 +6,7 @@ from playwright.sync_api import sync_playwright
 
 def run_recorder(url, steps_str, output_name):
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
+        browser = p.chromium.launch(headless=True)
         context = browser.new_context(record_video_dir="tests/recordings/")
         page = context.new_page()
         
