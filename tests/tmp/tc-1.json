@@ -1,0 +1,12 @@
+[
+    {
+        "cmd": "goto",
+        "target": "http://localhost:3000",
+        "value": ""
+    },
+    {
+        "cmd": "assert_text",
+        "target": "body",
+        "value": "Login"
+    }
+]

@@ -23,6 +23,14 @@ except ImportError:
     print("LỖI: Thiếu thư viện openpyxl. Chạy: pip install openpyxl")
     sys.exit(1)
 
+# Fix encoding for Windows Terminal
+if sys.stdout.encoding.lower() != 'utf-8':
+    try:
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    except:
+        pass
+
 
 # ─── Nhận diện cột tự động ────────────────────────────────────────────────────
 
@@ -312,7 +320,9 @@ def main():
     else:
         stem = Path(xlsx_path).stem
         stem_clean = re.sub(r"\s+", "-", stem).lower()
-        md_path = str(Path(xlsx_path).parent / f"{stem_clean}.md")
+        # Đảm bảo lưu cùng folder với xlsx_path
+        xlsx_dir = os.path.dirname(os.path.abspath(xlsx_path))
+        md_path = os.path.join(xlsx_dir, f"{stem_clean}.md")
 
     print(f"Đang đọc: {xlsx_path}")
     header, data = load_excel(xlsx_path)

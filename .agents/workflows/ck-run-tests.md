@@ -78,34 +78,30 @@ Sau khi tester xác nhận, thực thi **chính xác** theo nội dung trong fil
 
 Với **mỗi test case** trong danh sách đã chọn:
 
-**Tên recording:** `tc-{mã tc}-{slug-tên-test}` (ví dụ: `tc-001-dang-ky-tai-khoan`)
+1. **Compile sang JSON:**
+   Chạy script để tạo kịch bản thực thi cho AI:
+   ```powershell
+   python ".agents/skills/manual-tester/scripts/md_to_json.py" "{path/to/test-plan.md}" "{Mã TC}" --output "tests/tmp/tc-{id}.json"
+   ```
 
-**PHẢI** bật chức năng quay video (recording) cho toàn bộ quá trình thực hiện — **KHÔNG** dùng ảnh chụp đơn lẻ.
+2. **Chạy test (Recording):**
+   Tên ghi hình: `tc-{mã tc}-{slug-tên-test}` (ví dụ: `tc-001-dang-ky-tai-khoan`)
 
 **Nội dung task cho browser_subagent:**
 ```
-Thực thi test case: {Mã TC} — {Tên test}
+Thực thi test tự động cho TC: {Mã TC} — {Tên test}
 
-URL ứng dụng: {URL}
+Dùng lệnh sau để thực thi chính xác kịch bản đã được biên dịch:
+python .agents/skills/browser-automation/scripts/recorder.py --url "{URL}" --json "tests/tmp/tc-{id}.json" --output "tc-{id}.webm"
 
-Dùng lệnh sau để thực thi và quay video:
-python .agents/skills/browser-automation/scripts/recorder.py --url "{URL}" --steps "{TRÍCH_XUẤT_CÁC_BƯỚC_THÀNH_CÚ_PHÁP_CLIP_Hợp_lệ}" --output "tc-{id}.webm"
+Quy tắc thực thi:
+1. Chạy lệnh trên và quan sát output console.
+2. Nếu lệnh kết thúc với Exit Code 0 -> ĐẠT.
+3. Nếu lệnh kết thúc với Exit Code 1 -> KHÔNG ĐẠT.
+4. Đọc file kết quả tại tests/recordings/result_tc-{id}.json để biết bước nào bị lỗi.
+5. Nếu KHÔNG ĐẠT: Kiểm tra ảnh chụp bằng chứng tại tests/recordings/error_tc_tc-{id}.png.
 
-Điều kiện trước khi test:
-{Điều kiện — lấy nguyên từ file .md}
-
-Các bước thực hiện (thực hiện chính xác từng bước):
-{Các bước — lấy nguyên từ file .md}
-
-Kết quả mong đợi:
-{Kết quả — lấy nguyên từ file .md}
-
-Sau khi thực hiện xong:
-1. Kết thúc và lưu video playback tại tests/recordings/tc-{id}.webm.
-2. **SO SÁNH:** Đối chiếu "Kết quả thực tế" với "Kết quả mong đợi".
-3. Trả về: ĐẠT hoặc KHÔNG ĐẠT.
-4. Nếu KHÔNG ĐẠT: Mô tả chính xác bước nào gặp lỗi và sự khác biệt so với mong đợi.
-5. **CẤM VƯỢT QUYỀN:** Tuyệt đối không tự ý thực hiện các bước không có trong kịch bản (ví dụ: tự đăng ký khi login fail) để "giả vờ" vượt qua testcase.
+Tuyệt đối không tự ý thực hiện các bước ngoài kịch bản JSON.
 ```
 
 ### Bước 3.3 — Cập nhật kết quả vào file .md (ngay sau mỗi test)
@@ -114,8 +110,9 @@ Sau khi chạy xong mỗi test case, **cập nhật ngay lập tức** (không g
 
 **1. Trong phần chi tiết test case:**
 ```
-**Kết quả thực tế:** Đạt / Không đạt — [mô tả ngắn]
-**Bằng chứng video:** Xem recording tại tests/recordings/tc-{id}-{slug}.webp
+**Kết quả thực tế:** Đạt / Không đạt — [mô tả lỗi nếu có]
+**Bằng chứng video:** tests/recordings/tc-{id}-{slug}.webm
+**Ảnh lỗi (nếu có):** tests/recordings/error_tc_tc-{id}.png
 ```
 
 **2. Trong bảng Kết Quả cuối file:**
@@ -175,12 +172,10 @@ Sau khi chạy hết tất cả test case, tạo file báo cáo tại `tests/rep
 
 ## Các Test Không Đạt ❌
 
-### TC-{ID}: {Tên test}
-
 - **Bước bị lỗi:** Bước {N}
 - **Kết quả thực tế:** {mô tả điều gì xảy ra}
 - **Kết quả mong đợi:** {copy từ file .md}
-- **Bằng chứng:** Video tại tests/recordings/tc-{id}.webp
+- **Bằng chứng:** Video tc-{id}.webm | Ảnh lỗi: error_tc_tc-{id}.png
 
 ---
 

@@ -1,0 +1,27 @@
+[
+    {
+        "cmd": "click",
+        "target": "Login",
+        "value": ""
+    },
+    {
+        "cmd": "fill",
+        "target": "Username",
+        "value": "ctn"
+    },
+    {
+        "cmd": "fill",
+        "target": "Password",
+        "value": "12345678"
+    },
+    {
+        "cmd": "click",
+        "target": "Login",
+        "value": ""
+    },
+    {
+        "cmd": "assert_text",
+        "target": "body",
+        "value": "Dashboard"
+    }
+]

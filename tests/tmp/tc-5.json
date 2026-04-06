@@ -1,0 +1,22 @@
+[
+    {
+        "cmd": "click",
+        "target": "Forgot Password?",
+        "value": ""
+    },
+    {
+        "cmd": "fill",
+        "target": "Email",
+        "value": "tester12@gmail.com"
+    },
+    {
+        "cmd": "click",
+        "target": "Send Reset Link",
+        "value": ""
+    },
+    {
+        "cmd": "assert_text",
+        "target": "body",
+        "value": "Reset link sent"
+    }
+]
