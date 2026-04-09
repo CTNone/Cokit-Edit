@@ -1,7 +1,7 @@
 # Kế Hoạch Kiểm Thử
 
 **Nguồn file:** test-cases.xlsx
-**Ngày tạo/cập nhật:** 09:56:37 9/4/2026
+**Ngày tạo/cập nhật:** 13:47:07 9/4/2026
 **Tổng số test case:** 5
 **Ứng dụng đích:** http://localhost:3000
 
@@ -35,8 +35,8 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 **Kết quả thực tế:** Trang được tải thành công tại `http://localhost:3000/login.html` và giao diện hiển thị đầy đủ.
 
 **Bằng chứng:**
-- [Ảnh chụp](../runs/run_20260409_095625/cases/tc-01/tc-01.png)
-- [Video](../runs/run_20260409_095625/cases/tc-01/tc-01.webm)
+- [Ảnh chụp](../runs/run_20260409_134655/cases/tc-01/tc-01.png)
+- [Video](../runs/run_20260409_134655/cases/tc-01/tc-01.webm)
 
 ---
 
@@ -57,38 +57,31 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 **Kết quả thực tế:** Người dùng được chuyển tới dashboard tại `http://localhost:3000/index.html`.
 
 **Bằng chứng:**
-- [Ảnh chụp](../runs/run_20260409_095625/cases/tc-02/tc-02.png)
-- [Video](../runs/run_20260409_095625/cases/tc-02/tc-02.webm)
+- [Ảnh chụp](../runs/run_20260409_134655/cases/tc-02/tc-02.png)
+- [Video](../runs/run_20260409_134655/cases/tc-02/tc-02.webm)
 
 ---
 
 ### TC-03 — User Registration
 
 - **Mô tả:** Verify that a user can register a new account
-- **Trạng thái:** ❌ Không đạt
+- **Trạng thái:** ✅ Đạt
 
 **Các bước thực hiện:**
 1. Click Register button
-2. Enter username: "tester11"
-3. Enter email: "tester11@gmail.com"
-4. Enter password: "12345678"
+2. Enter username: "tester111"
+3. Enter email: "tester111@gmail.com"
+4. Enter password: "123456789"
 5. Click Submit
 
 **Kết quả mong đợi:**
 - Registration is successful and user is redirected to the Login page
 
-**Kết quả thực tế:** Không chuyển sang trang đăng nhập. URL hiện tại: `http://localhost:3000/register.html`. Nội dung hiển thị: Register
-Username
-Email
-Password
-Register
-User already exists
-
-Already have an account? Login
+**Kết quả thực tế:** Đăng ký thành công và chuyển về trang đăng nhập tại `http://localhost:3000/login.html`.
 
 **Bằng chứng:**
-- [Ảnh chụp](../runs/run_20260409_095625/cases/tc-03/tc-03.png)
-- [Video](../runs/run_20260409_095625/cases/tc-03/tc-03.webm)
+- [Ảnh chụp](../runs/run_20260409_134655/cases/tc-03/tc-03.png)
+- [Video](../runs/run_20260409_134655/cases/tc-03/tc-03.webm)
 
 ---
 
@@ -107,8 +100,8 @@ Already have an account? Login
 **Kết quả thực tế:** Logout thành công và ứng dụng chuyển về `http://localhost:3000/login.html`.
 
 **Bằng chứng:**
-- [Ảnh chụp](../runs/run_20260409_095625/cases/tc-04/tc-04.png)
-- [Video](../runs/run_20260409_095625/cases/tc-04/tc-04.webm)
+- [Ảnh chụp](../runs/run_20260409_134655/cases/tc-04/tc-04.png)
+- [Video](../runs/run_20260409_134655/cases/tc-04/tc-04.webm)
 
 ---
 
@@ -128,8 +121,8 @@ Already have an account? Login
 **Kết quả thực tế:** Quan sát được đúng nội dung mong đợi trên trang. URL hiện tại: `http://localhost:3000/forgot-password.html`.
 
 **Bằng chứng:**
-- [Ảnh chụp](../runs/run_20260409_095625/cases/tc-05/tc-05.png)
-- [Video](../runs/run_20260409_095625/cases/tc-05/tc-05.webm)
+- [Ảnh chụp](../runs/run_20260409_134655/cases/tc-05/tc-05.png)
+- [Video](../runs/run_20260409_134655/cases/tc-05/tc-05.webm)
 
 ---
 
@@ -141,8 +134,8 @@ Already have an account? Login
 
 | Mã TC | Tên Test | Kết Quả | Bằng Chứng | Ghi Chú |
 |-------|----------|---------|------------|---------|
-| TC-01 | Check Link | ✅ Đạt | [Ảnh](../runs/run_20260409_095625/cases/tc-01/tc-01.png) / [Video](../runs/run_20260409_095625/cases/tc-01/tc-01.webm) | - |
-| TC-02 | User Login | ✅ Đạt | [Ảnh](../runs/run_20260409_095625/cases/tc-02/tc-02.png) / [Video](../runs/run_20260409_095625/cases/tc-02/tc-02.webm) | - |
-| TC-03 | User Registration | ❌ Không đạt | [Ảnh](../runs/run_20260409_095625/cases/tc-03/tc-03.png) / [Video](../runs/run_20260409_095625/cases/tc-03/tc-03.webm) | - |
-| TC-04 | User Logout | ✅ Đạt | [Ảnh](../runs/run_20260409_095625/cases/tc-04/tc-04.png) / [Video](../runs/run_20260409_095625/cases/tc-04/tc-04.webm) | - |
-| TC-05 | Forgot Password | ✅ Đạt | [Ảnh](../runs/run_20260409_095625/cases/tc-05/tc-05.png) / [Video](../runs/run_20260409_095625/cases/tc-05/tc-05.webm) | - |
+| TC-01 | Check Link | ✅ Đạt | [Ảnh](../runs/run_20260409_134655/cases/tc-01/tc-01.png) / [Video](../runs/run_20260409_134655/cases/tc-01/tc-01.webm) | - |
+| TC-02 | User Login | ✅ Đạt | [Ảnh](../runs/run_20260409_134655/cases/tc-02/tc-02.png) / [Video](../runs/run_20260409_134655/cases/tc-02/tc-02.webm) | - |
+| TC-03 | User Registration | ✅ Đạt | [Ảnh](../runs/run_20260409_134655/cases/tc-03/tc-03.png) / [Video](../runs/run_20260409_134655/cases/tc-03/tc-03.webm) | - |
+| TC-04 | User Logout | ✅ Đạt | [Ảnh](../runs/run_20260409_134655/cases/tc-04/tc-04.png) / [Video](../runs/run_20260409_134655/cases/tc-04/tc-04.webm) | - |
+| TC-05 | Forgot Password | ✅ Đạt | [Ảnh](../runs/run_20260409_134655/cases/tc-05/tc-05.png) / [Video](../runs/run_20260409_134655/cases/tc-05/tc-05.webm) | - |

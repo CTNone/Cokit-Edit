@@ -11,6 +11,9 @@ const config = {
 
   // App Config
   TARGET_URL: process.env.TARGET_URL || 'http://localhost:3000',
+  INTERACTION_TIMEOUT: Number(process.env.INTERACTION_TIMEOUT || 5000),
+  ASSERTION_TIMEOUT: Number(process.env.ASSERTION_TIMEOUT || 3000),
+  STEP_RETRY_LIMIT: Number(process.env.STEP_RETRY_LIMIT || 2),
   ROOT_DIR,
   RESULTS_DIR: path.join(ROOT_DIR, 'runs'),
   REPORTS_DIR: path.join(ROOT_DIR, 'runs', 'reports'),
