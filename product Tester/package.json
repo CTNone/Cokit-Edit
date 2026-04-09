@@ -1,0 +1,19 @@
+{
+  "name": "product-tester-cli",
+  "version": "1.0.0",
+  "description": "Automation testing CLI tool with Excel-to-MD conversion and Playwright integration.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "package": "npm pack"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^9.4.1",
+    "dotenv": "^16.0.3",
+    "fs-extra": "^10.1.0",
+    "playwright": "^1.30.0",
+    "xlsx": "^0.18.5"
+  }
+}
