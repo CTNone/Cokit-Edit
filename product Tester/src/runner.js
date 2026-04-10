@@ -4,7 +4,7 @@ const path = require('path');
 const config = require('./config');
 const logger = require('./logger');
 const resultsManager = require('./results');
-const { normalizeWhitespace, sanitizeFileSegment } = require('./utils');
+const { normalizeWhitespace, sanitizeFileSegment, normalizeUrl } = require('./utils');
 const StepParser = require('./step-parser');
 const ActionExecutor = require('./action-executor');
 const AssertionEngine = require('./assertion-engine');
@@ -15,9 +15,10 @@ class PlaywrightRunner {
     this.options = {
       headed: options.headed || false,
       mode: options.mode || 'compile',
-      targetUrl: options.targetUrl || config.TARGET_URL,
+      targetUrl: normalizeUrl(options.targetUrl || config.TARGET_URL),
       ...options,
     };
+    this.options.targetUrl = normalizeUrl(this.options.targetUrl);
     this.browser = null;
     this.catalog = new Map();
     this.referenceData = new Map();
@@ -136,6 +137,7 @@ class PlaywrightRunner {
     while (attempt < maxRetries) {
       try {
         await actionExecutor.execute(action);
+        await actionExecutor.page.waitForTimeout(config.STEP_DELAY);
         return;
       } catch (error) {
         attempt += 1;

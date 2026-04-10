@@ -1,5 +1,6 @@
 const SelectorResolver = require('./selector-resolver');
 const { createInteractionError } = require('./interaction-errors');
+const { normalizeUrl } = require('./utils');
 
 class ActionExecutor {
   constructor(page, options = {}) {
@@ -30,21 +31,60 @@ class ActionExecutor {
         await this.page.keyboard.press('Enter');
         await this.page.waitForLoadState('networkidle').catch(() => {});
         return;
+      case 'scroll-down':
+        await this.page.evaluate(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }));
+        await this.page.waitForTimeout(1000);
+        return;
+      case 'set-viewport-mobile':
+        await this.page.setViewportSize({ width: 375, height: 667 });
+        await this.page.waitForTimeout(500);
+        return;
       default:
         throw createInteractionError('action_fail', `Chưa hỗ trợ cú pháp bước: ${action.raw}`);
     }
   }
 
+  async _safeGoto(url, options = {}) {
+    try {
+      await this.page.goto(url, { waitUntil: 'domcontentloaded', ...options });
+      await this.page.waitForTimeout(1000);
+    } catch (error) {
+      if (error.message.includes('ERR_SSL_PROTOCOL_ERROR') && url.includes('localhost')) {
+        const fallbackUrl = url.replace('https:', 'http:');
+        console.warn(`SSL Error on localhost, retrying with HTTP: ${fallbackUrl}`);
+        await this.page.goto(fallbackUrl, { waitUntil: 'domcontentloaded', ...options });
+        await this.page.waitForTimeout(1000);
+        return;
+      }
+      throw error;
+    }
+  }
+
   async gotoKnownPage(pageName) {
-    const url = new URL(pageName, this.targetUrl.endsWith('/') ? this.targetUrl : `${this.targetUrl}/`).toString();
-    await this.page.goto(url, { waitUntil: 'domcontentloaded' });
-    await this.page.waitForLoadState('networkidle').catch(() => {});
+    try {
+      const baseUrl = this.targetUrl.endsWith('/') ? this.targetUrl : `${this.targetUrl}/`;
+      const url = new URL(pageName, baseUrl).toString();
+      await this._safeGoto(url);
+      await this.page.waitForLoadState('networkidle').catch(() => {});
+    } catch (error) {
+      if (error.code === 'ERR_INVALID_URL') {
+        throw createInteractionError('action_fail', `URL không hợp lệ: ${pageName} (Base: ${this.targetUrl})`);
+      }
+      throw error;
+    }
   }
 
   async gotoUrl(target) {
-    const url = target.startsWith('http') ? target : new URL(target, this.targetUrl).toString();
-    await this.page.goto(url, { waitUntil: 'domcontentloaded' });
-    await this.page.waitForLoadState('networkidle').catch(() => {});
+    try {
+      const url = target.startsWith('http') ? target : (target.includes('.') || target.startsWith('localhost') ? normalizeUrl(target) : new URL(target, this.targetUrl).toString());
+      await this._safeGoto(url);
+      await this.page.waitForLoadState('networkidle').catch(() => {});
+    } catch (error) {
+      if (error.code === 'ERR_INVALID_URL' || error.message.includes('Invalid URL')) {
+        throw createInteractionError('action_fail', `URL không hợp lệ: ${target}`);
+      }
+      throw error;
+    }
   }
 
   async loginWithReference(refId) {
@@ -85,7 +125,7 @@ class ActionExecutor {
   async clickTarget(target) {
     const locator = await this.selectorResolver.resolveClickable(target);
     await locator.click();
-    await this.page.waitForTimeout(300);
+    await this.page.waitForTimeout(1000);
     await this.page.waitForLoadState('networkidle').catch(() => {});
   }
 

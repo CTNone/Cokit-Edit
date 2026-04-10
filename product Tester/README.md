@@ -81,9 +81,11 @@ Kiểm tra file `.env`:
 
 ```env
 TARGET_URL=http://localhost:3000
+STEP_DELAY=1000  # Pause between steps (ms) for better video visibility
 ```
 
 > `TARGET_URL` là giá trị mặc định. Trong lúc chạy CLI, bạn vẫn có thể nhập URL khác nếu cần.
+> `STEP_DELAY` mặc định là 1000 (1 giây). Nếu muốn test chạy nhanh hơn, hãy giảm xuống 0.
 
 ---
 
@@ -261,6 +263,14 @@ Khi CLI hỏi lựa chọn, chọn:
 ```
 
 Sau đó mở `templates/test-cases.md` để chỉnh tay rồi chạy lại.
+
+### Trường hợp 4 — Tự động xử lý SSL trên localhost
+
+Nếu bạn nhập `https://localhost` nhưng server chỉ hỗ trợ `http`, tool sẽ tự động fallback sang `http` và tiếp tục chạy thay vì báo lỗi protocol.
+
+### Trường hợp 5 — Muốn quay video chậm hơn
+
+Chế độ mặc định dừng **1 giây** sau mỗi bước để video quay lại rõ ràng. Bạn có thể chỉnh `STEP_DELAY` trong `.env` để thay đổi độ trễ này.
 
 ---
 

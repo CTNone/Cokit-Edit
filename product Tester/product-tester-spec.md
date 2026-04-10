@@ -34,6 +34,8 @@ Mục tiêu của tool là giúp tester hoặc người nhận bàn giao có th�
 - Engine thực thi dùng Playwright
 - Cho phép chạy trên URL ứng dụng được nhập lúc chạy hoặc lấy từ `.env`
 - Hỗ trợ mode mở trình duyệt thật (`--headed`) để quan sát trực tiếp
+- Hỗ trợ `STEP_DELAY` để làm chậm quá trình thực thi nhằm mục đích demo/quay video
+- Tự động fallback SSL (`https` -> `http`) khi gặp lỗi protocol trên `localhost`
 
 ### 2.4 So sánh kết quả
 
@@ -115,3 +117,5 @@ Implementation hiện tại đã hỗ trợ:
 - so sánh expected vs actual theo rule hiện có
 - lưu evidence và sinh report
 - cập nhật lại file Markdown theo kết quả run mới nhất
+- hỗ trợ các bước tự nhiên: Scroll, Mobile View, Read/Look at
+- tự động bóc tách selector thông minh từ ngôn ngữ tự nhiên

@@ -9,7 +9,7 @@ class StepParser {
       return { type: 'noop', raw: text };
     }
 
-    if (/navigate to|go to/i.test(lower)) {
+    if (/navigate to|go to|enter url|open url|access/i.test(lower)) {
       if (/login page/i.test(lower)) {
         return { type: 'goto-page', pageName: 'login.html', raw: text };
       }
@@ -18,7 +18,7 @@ class StepParser {
         return { type: 'goto-page', pageName: 'register.html', raw: text };
       }
 
-      const urlMatch = text.match(/(https?:\/\/[^\s]+|\/[^\s]+)/i);
+      const urlMatch = text.match(/(https?:\/\/[^\s]+|localhost:\d+[^\s]*|\/[^\s]+|[a-z0-9]+\.[a-z0-9]+\.[^\s]+)/i);
       if (urlMatch) {
         return { type: 'goto-url', target: urlMatch[1], raw: text };
       }
@@ -44,9 +44,30 @@ class StepParser {
       };
     }
 
+    if (/look at|read|view|see|observe/i.test(lower)) {
+      return { type: 'noop', raw: text };
+    }
+
+    if (/scroll down|scroll to bottom/i.test(lower)) {
+      return { type: 'scroll-down', raw: text };
+    }
+
+    if (/smartphone|mobile version|phone browser/i.test(lower)) {
+      return { type: 'set-viewport-mobile', raw: text };
+    }
+
     if (/click/i.test(lower)) {
       const quoted = text.match(/"([^"]+)"/);
-      const target = quoted?.[1] || text.replace(/click/i, '').replace(/button|link|icon|menu/ig, '').trim();
+      let target = quoted?.[1] || text.replace(/click/i, '')
+        .replace(/on the|on|the|button|link|icon|menu/ig, '')
+        .trim();
+      
+      // Special case: if target is empty after stripping but original had content
+      if (!target && lower.includes('email')) target = 'email';
+      if (!target && lower.includes('github')) target = 'github';
+      if (!target && lower.includes('linkedin')) target = 'linkedin';
+      if (!target && lower.includes('facebook')) target = 'facebook';
+
       return { type: 'click', target: normalizeWhitespace(target), raw: text };
     }
 

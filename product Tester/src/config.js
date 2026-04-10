@@ -14,6 +14,7 @@ const config = {
   INTERACTION_TIMEOUT: Number(process.env.INTERACTION_TIMEOUT || 5000),
   ASSERTION_TIMEOUT: Number(process.env.ASSERTION_TIMEOUT || 3000),
   STEP_RETRY_LIMIT: Number(process.env.STEP_RETRY_LIMIT || 2),
+  STEP_DELAY: Number(process.env.STEP_DELAY || 1000), // Default 1s delay between steps for visibility
   ROOT_DIR,
   RESULTS_DIR: path.join(ROOT_DIR, 'runs'),
   REPORTS_DIR: path.join(ROOT_DIR, 'runs', 'reports'),

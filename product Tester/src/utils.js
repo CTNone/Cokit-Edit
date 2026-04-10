@@ -65,6 +65,15 @@ async function cleanOldRuns(runsDir, maxRuns = 10) {
   }
 }
 
+function normalizeUrl(url) {
+  if (!url) return '';
+  let normalized = url.trim();
+  if (!/^https?:\/\//i.test(normalized)) {
+    normalized = `http://${normalized}`;
+  }
+  return normalized;
+}
+
 module.exports = {
   ensureDir,
   getTimestampedFolder,
@@ -73,4 +82,5 @@ module.exports = {
   splitSteps,
   toRelativeLink,
   cleanOldRuns,
+  normalizeUrl,
 };

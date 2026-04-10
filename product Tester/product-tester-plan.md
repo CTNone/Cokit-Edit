@@ -51,6 +51,9 @@ Nếu bạn chỉ muốn chạy tool, đọc `README.md` và `quickstart.md` là
 - [x] Cập nhật lại `templates/test-cases.md` sau mỗi lần chạy
 - [x] Sinh `summary.json`, `report.md`, `latest-run.json`
 - [x] Có script setup cho bàn giao sang máy khác
+- [x] Hỗ trợ bước tự nhiên (Scroll, Mobile View, Observation)
+- [x] Tự động fallback SSL cho localhost
+- [x] Tùy chỉnh độ trễ thực thi `STEP_DELAY`
 
 ### Đã kiểm chứng gần nhất
 
@@ -113,8 +116,8 @@ runs/run_<timestamp>/report.md
 
 Điều này phù hợp cho demo và nhiều case phổ biến, nhưng khi mở rộng cho nhiều sản phẩm khác nhau có thể cần:
 
-- tăng số rule
-- thêm selector chuyên biệt
+- tăng số rule (đã bổ sung Scroll, Mobile, Keyword fallback)
+- thêm selector chuyên biệt (đã nâng cấp logic bóc tách ngôn ngữ tự nhiên)
 - hoặc tách assertion engine riêng
 
 ### 5.2 Test case phụ thuộc dữ liệu thật của app
