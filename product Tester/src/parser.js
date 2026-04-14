@@ -45,7 +45,8 @@ class ExcelParser {
       const dataRows = hasHeaderRow ? rows.slice(headerRowIndex + 1) : rows;
       const testCases = dataRows
         .map((row, index) => this.mapRow(row, index))
-        .filter(Boolean);
+        .filter(Boolean)
+        .filter((tc) => tc.id && String(tc.id).trim() !== '' && tc.stepsRaw && String(tc.stepsRaw).trim() !== '');
 
       this.validate(testCases);
       return testCases;

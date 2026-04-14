@@ -1,81 +1,69 @@
-const { normalizeWhitespace } = require('./utils');
-
 class StepParser {
   parse(stepText) {
-    const text = normalizeWhitespace(stepText);
-    const lower = text.toLowerCase();
+    const text = (stepText || '').trim();
+    if (!text) return { type: 'noop', raw: text };
+    
+    // Ignore numbering if LLM accidentally kept it despite split
+    const cleanText = text.replace(/^\d+\.\s*/, '').trim();
 
-    if (!text || /^open browser$/i.test(text)) {
-      return { type: 'noop', raw: text };
+    // Parse the DSL format: [ACTION] "Target" : "Value" or [ACTION] "Target" -> "Value"
+    const match = cleanText.match(/^\[([^\]]+)\]\s*(.*)$/i);
+    if (!match) {
+      if (/^open browser$/i.test(cleanText)) return { type: 'noop', raw: text };
+      return { type: 'unsupported', message: `Invalid DSL syntax: must start with [ACTION]`, raw: text };
     }
 
-    if (/navigate to|go to|enter url|open url|access/i.test(lower)) {
-      if (/login page/i.test(lower)) {
-        return { type: 'goto-page', pageName: 'login.html', raw: text };
+    const actionType = match[1].toUpperCase().trim().replace(/\s+/g, '_');
+    const remainder = match[2].trim();
+
+    // Utility to parse targets and values safely
+    const unquote = (val) => (val || '').replace(/^["']|["']$/g, '').trim();
+
+    // Split target and value
+    let target = remainder;
+    let value = '';
+    
+    // Actions that are known to take only one argument (target)
+    const singleArgActions = ['GOTO', 'CLICK', 'CHECK', 'HOVER', 'PRESS', 'SCROLL', 'SCROLL_TO', 'NAV', 'MOBILE_VIEW', 'READ', 'LOOK_AT', 'LOOKAT', 'OBSERVE'];
+
+    if (singleArgActions.includes(actionType)) {
+      target = unquote(remainder);
+    } else {
+      // Split on the first occurrence of :, ->, or 'using'
+      // Use a more specific split that ignores :// (protocol)
+      const matchSplit = remainder.match(/^(.*?)(?:\s*(?:->|:(?!\/\/)|using)\s*)(.*)$/);
+      if (matchSplit) {
+         target = unquote(matchSplit[1]);
+         value = unquote(matchSplit[2]);
+      } else {
+         target = unquote(target);
       }
-
-      if (/register/i.test(lower)) {
-        return { type: 'goto-page', pageName: 'register.html', raw: text };
-      }
-
-      const urlMatch = text.match(/(https?:\/\/[^\s]+|localhost:\d+[^\s]*|\/[^\s]+|[a-z0-9]+\.[a-z0-9]+\.[^\s]+)/i);
-      if (urlMatch) {
-        return { type: 'goto-url', target: urlMatch[1], raw: text };
-      }
     }
-
-    const referenceLoginMatch = text.match(/login with credentials from\s+(TC-\d+)/i);
-    if (referenceLoginMatch) {
-      return { type: 'reference-login', refId: referenceLoginMatch[1].toUpperCase(), raw: text };
+    
+    switch (actionType) {
+      case 'GOTO': return { type: 'goto-url', target, raw: text };
+      case 'NAV': return { type: 'nav', direction: target, raw: text };
+      case 'SCROLL': return { type: 'scroll', direction: target, raw: text };
+      case 'SCROLL_TO': return { type: 'scroll-to', target, raw: text };
+      case 'FILL': return { type: 'fill', fieldName: target, value, raw: text };
+      case 'SELECT': return { type: 'select-option', fieldName: target, option: value, raw: text };
+      case 'CHECK': return { type: 'check', target, raw: text };
+      case 'UPLOAD': return { type: 'upload-file', filePath: target, fieldName: value, raw: text };
+      case 'AUTH': 
+        if (target.toLowerCase() === 'login') return { type: 'reference-login', refId: value, raw: text };
+        if (target.toLowerCase().includes('email')) return { type: 'reference-email', refId: value, raw: text };
+        return { type: 'unsupported', message: `Unknown AUTH target: ${target}`, raw: text };
+      case 'CLICK': return { type: 'click', target, raw: text };
+      case 'HOVER': return { type: 'hover', target, raw: text };
+      case 'PRESS': return { type: 'press', key: target, raw: text };
+      case 'MOBILE_VIEW': return { type: 'mobile-view', raw: text };
+      case 'READ':
+      case 'LOOK_AT':
+      case 'LOOKAT':
+      case 'OBSERVE': return { type: 'observe', target, raw: text };
+      case 'UNKNOWN': return { type: 'unsupported', message: `LLM could not compile this step`, raw: text };
+      default: return { type: 'unsupported', message: `Unknown ACTION tag: [${actionType}]`, raw: text };
     }
-
-    const referenceEmailMatch = text.match(/enter\s+email\s+used\s+in\s+(TC-\d+)/i);
-    if (referenceEmailMatch) {
-      return { type: 'reference-email', refId: referenceEmailMatch[1].toUpperCase(), raw: text };
-    }
-
-    const inputMatch = text.match(/enter\s+([^:]+):?\s*"([^"]+)"/i);
-    if (inputMatch) {
-      return {
-        type: 'fill',
-        fieldName: normalizeWhitespace(inputMatch[1]),
-        value: inputMatch[2],
-        raw: text,
-      };
-    }
-
-    if (/look at|read|view|see|observe/i.test(lower)) {
-      return { type: 'noop', raw: text };
-    }
-
-    if (/scroll down|scroll to bottom/i.test(lower)) {
-      return { type: 'scroll-down', raw: text };
-    }
-
-    if (/smartphone|mobile version|phone browser/i.test(lower)) {
-      return { type: 'set-viewport-mobile', raw: text };
-    }
-
-    if (/click/i.test(lower)) {
-      const quoted = text.match(/"([^"]+)"/);
-      let target = quoted?.[1] || text.replace(/click/i, '')
-        .replace(/on the|on|the|button|link|icon|menu/ig, '')
-        .trim();
-      
-      // Special case: if target is empty after stripping but original had content
-      if (!target && lower.includes('email')) target = 'email';
-      if (!target && lower.includes('github')) target = 'github';
-      if (!target && lower.includes('linkedin')) target = 'linkedin';
-      if (!target && lower.includes('facebook')) target = 'facebook';
-
-      return { type: 'click', target: normalizeWhitespace(target), raw: text };
-    }
-
-    if (/press enter/i.test(lower)) {
-      return { type: 'press-enter', raw: text };
-    }
-
-    return { type: 'unsupported', raw: text };
   }
 }
 

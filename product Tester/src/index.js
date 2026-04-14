@@ -6,6 +6,7 @@ require('dotenv').config();
 const config = require('./config');
 const ExcelParser = require('./parser');
 const MarkdownGenerator = require('./generator');
+const LlmCompiler = require('./llm-compiler');
 const ui = require('./ui');
 const logger = require('./logger');
 const PlaywrightRunner = require('./runner');
@@ -40,7 +41,12 @@ function parseTestCases(inputPath) {
 
 async function preparePlan(inputPath, outputPath, options = {}) {
   logger.info(`Converting ${inputPath} to Markdown...`);
-  const testCases = parseTestCases(inputPath);
+  let testCases = parseTestCases(inputPath);
+  
+  logger.info('Compiling natural language steps to DSL using LLM...');
+  const compiler = new LlmCompiler();
+  testCases = await compiler.compileTestCases(testCases);
+
   const generator = new MarkdownGenerator(outputPath);
   generator.generate(testCases, {
     sourceFile: inputPath,
@@ -161,8 +167,11 @@ program
         select: executionChoice.mode === 'select' ? executionChoice.ids.join(',') : undefined,
         retry: executionChoice.mode === 'retry',
       }, testCases);
+
+      process.exit(0);
     } catch (error) {
       logger.error(`Conversion failed: ${error.message}`);
+      process.exit(1);
     }
   });
 
@@ -170,7 +179,7 @@ program
   .command('run [xlsxPath]')
   .description('Run automation test cases')
   .option('--headed', 'Run browser in headed mode', false)
-  .option('--mode <type>', 'Execution mode (compile, etc.)', 'compile')
+  .option('--mode <type>', 'Execution mode (rule, hybrid)', config.EXECUTION_MODE)
   .option('--force', 'Force re-run even if already completed', false)
   .option('--select <ids>', 'Run specific test case IDs (comma-separated)')
   .option('--retry', 'Rerun only failed test cases from previous run')
@@ -182,6 +191,11 @@ program
     const planPath = path.resolve(options.plan || resolveOutputPath(inputPath));
 
     let testCases = parseTestCases(inputPath);
+
+    logger.info('Compiling natural language steps to DSL using LLM...');
+    const compiler = new LlmCompiler();
+    testCases = await compiler.compileTestCases(testCases);
+
     if (!await ui.confirm(`Use test plan at "${planPath}" and continue?`)) {
       logger.warn('Execution cancelled by tester.');
       return;
@@ -210,7 +224,9 @@ program
       targetUrl: options.targetUrl,
       select: executionChoice.mode === 'select' ? executionChoice.ids.join(',') : undefined,
       retry: executionChoice.mode === 'retry',
-    }, parseTestCases(inputPath));
+    }, testCases);
+
+    process.exit(0);
   });
 
 program.parse(process.argv);

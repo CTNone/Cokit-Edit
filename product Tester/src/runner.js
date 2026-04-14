@@ -9,12 +9,15 @@ const StepParser = require('./step-parser');
 const ActionExecutor = require('./action-executor');
 const AssertionEngine = require('./assertion-engine');
 const { getErrorLabel } = require('./interaction-errors');
+const LlmClient = require('./llm-client');
+const StepInterpreter = require('./step-interpreter');
+const LlmAssertionHelper = require('./llm-assertion-helper');
 
 class PlaywrightRunner {
   constructor(options = {}) {
     this.options = {
       headed: options.headed || false,
-      mode: options.mode || 'compile',
+      mode: options.mode || config.EXECUTION_MODE,
       targetUrl: normalizeUrl(options.targetUrl || config.TARGET_URL),
       ...options,
     };
@@ -23,6 +26,9 @@ class PlaywrightRunner {
     this.catalog = new Map();
     this.referenceData = new Map();
     this.stepParser = new StepParser();
+    this.llmClient = null;
+    this.stepInterpreter = null;
+    this.llmAssertionHelper = null;
   }
 
   async init(runFolder, testCases = []) {
@@ -31,6 +37,21 @@ class PlaywrightRunner {
     this.catalog = new Map(testCases.map((testCase) => [String(testCase.id || testCase.ID).toUpperCase(), testCase]));
     this.referenceData = new Map(testCases.map((testCase) => [String(testCase.id || testCase.ID).toUpperCase(), this.extractScenarioData(testCase)]));
     this.runFolder = runFolder;
+
+    if (this.options.mode === 'hybrid') {
+      this.llmClient = new LlmClient();
+      this.stepInterpreter = new StepInterpreter(this.llmClient);
+      this.llmAssertionHelper = new LlmAssertionHelper(this.llmClient);
+      logger.info('Hybrid mode enabled: LLM fallback will be used when deterministic rules are insufficient.');
+    }
+  }
+
+  async writeLlmArtifact(caseFolder, name, data) {
+    const llmFolder = path.join(caseFolder, 'llm');
+    await fs.ensureDir(llmFolder);
+    const filePath = path.join(llmFolder, `${sanitizeFileSegment(name)}.json`);
+    await fs.writeJson(filePath, data, { spaces: 2 });
+    return filePath;
   }
 
   extractScenarioData(testCase) {
@@ -52,9 +73,40 @@ class PlaywrightRunner {
     await fs.ensureDir(caseFolder);
 
     const context = await this.browser.newContext({
-      recordVideo: { dir: caseFolder, size: { width: 1280, height: 720 } },
-      viewport: { width: 1280, height: 720 },
+      recordVideo: { dir: caseFolder, size: { width: config.VIEWPORT_WIDTH, height: config.VIEWPORT_HEIGHT } },
+      viewport: { width: config.VIEWPORT_WIDTH, height: config.VIEWPORT_HEIGHT },
     });
+
+    if (this.options.headed) {
+      await context.addInitScript(() => {
+        if (window !== window.parent) return; // Chỉ hiện ở frame chính
+        window.addEventListener('DOMContentLoaded', () => {
+          const box = document.createElement('playwright-mouse-pointer');
+          const style = document.createElement('style');
+          style.innerHTML = `
+            playwright-mouse-pointer {
+              position: fixed; top: 0; left: 0; width: 14px; height: 14px;
+              background: rgba(255, 69, 0, 0.6); border: 2px solid white;
+              border-radius: 50%; pointer-events: none; z-index: 2147483647;
+              transition: transform 0.08s ease-out, background 0.1s;
+              box-shadow: 0 0 8px rgba(0,0,0,0.4); display: block;
+            }
+            playwright-mouse-pointer.clicked {
+              background: rgba(0, 255, 0, 0.9); transform: scale(1.5);
+            }
+          `;
+          document.head.appendChild(style);
+          document.body.appendChild(box);
+          document.addEventListener('mousemove', e => {
+            box.style.left = e.clientX + 'px';
+            box.style.top = e.clientY + 'px';
+          }, true);
+          document.addEventListener('mousedown', () => box.classList.add('clicked'), true);
+          document.addEventListener('mouseup', () => box.classList.remove('clicked'), true);
+        });
+      });
+    }
+
     const page = await context.newPage();
     const video = page.video();
     const actionExecutor = new ActionExecutor(page, {
@@ -65,6 +117,8 @@ class PlaywrightRunner {
     const assertionEngine = new AssertionEngine(page, {
       targetUrl: this.options.targetUrl,
       timeout: config.ASSERTION_TIMEOUT,
+      llmAssertionHelper: this.llmAssertionHelper,
+      onArtifact: async (name, data) => this.writeLlmArtifact(caseFolder, name, data),
     });
 
     let failureStep = null;
@@ -84,7 +138,7 @@ class PlaywrightRunner {
       for (let index = 0; index < steps.length; index += 1) {
         failureStep = index + 1;
         logger.dim(`    Action: ${normalizeWhitespace(steps[index])}`);
-        await this.executeStepWithRetry(actionExecutor, steps[index], failureStep);
+        await this.executeStepWithRetry(actionExecutor, steps[index], failureStep, caseFolder);
       }
 
       const evaluation = await assertionEngine.evaluate(scenario);
@@ -109,6 +163,11 @@ class PlaywrightRunner {
     await page.screenshot({ path: screenshotPath, fullPage: true }).catch(() => {});
     payload.evidence.screenshotPath = screenshotPath;
 
+    const llmFolder = path.join(caseFolder, 'llm');
+    if (await fs.pathExists(llmFolder).catch(() => false)) {
+      payload.evidence.llmFolderPath = llmFolder;
+    }
+
     await context.close();
 
     if (video) {
@@ -130,9 +189,24 @@ class PlaywrightRunner {
     }
   }
 
-  async executeStepWithRetry(actionExecutor, stepText, stepNumber, maxRetries = config.STEP_RETRY_LIMIT) {
+  async executeStepWithRetry(actionExecutor, stepText, stepNumber, caseFolder, maxRetries = config.STEP_RETRY_LIMIT) {
     let attempt = 0;
-    const action = this.stepParser.parse(stepText);
+    let action = this.stepParser.parse(stepText);
+
+    if (action.type === 'unsupported' && this.stepInterpreter) {
+      try {
+        const llmResult = await this.stepInterpreter.interpretStep(stepText, {
+          targetUrl: this.options.targetUrl,
+          currentUrl: actionExecutor.page.url(),
+        });
+        await this.writeLlmArtifact(caseFolder, `step-${stepNumber}-parse-fallback`, llmResult).catch(() => {});
+        if (llmResult?.parsed?.action?.type && llmResult.parsed.action.type !== 'unsupported') {
+          action = { ...llmResult.parsed.action, raw: stepText };
+        }
+      } catch (error) {
+        await this.writeLlmArtifact(caseFolder, `step-${stepNumber}-parse-fallback-error`, { message: error.message }).catch(() => {});
+      }
+    }
 
     while (attempt < maxRetries) {
       try {
@@ -141,6 +215,22 @@ class PlaywrightRunner {
         return;
       } catch (error) {
         attempt += 1;
+        if (this.stepInterpreter && (error.kind === 'selector_fail' || error.kind === 'action_fail')) {
+          try {
+            const llmResult = await this.stepInterpreter.interpretStep(stepText, {
+              targetUrl: this.options.targetUrl,
+              currentUrl: actionExecutor.page.url(),
+              errorMessage: error.message,
+            });
+            await this.writeLlmArtifact(caseFolder, `step-${stepNumber}-recovery-${attempt}`, llmResult).catch(() => {});
+            if (llmResult?.parsed?.action?.type && llmResult.parsed.action.type !== 'unsupported') {
+              action = { ...llmResult.parsed.action, raw: stepText };
+            }
+          } catch (llmError) {
+            await this.writeLlmArtifact(caseFolder, `step-${stepNumber}-recovery-${attempt}-error`, { message: llmError.message }).catch(() => {});
+          }
+        }
+
         const nonRetryable = error.blocked || error.kind === 'action_fail';
         if (attempt >= maxRetries || nonRetryable) {
           error.stepNumber = stepNumber;

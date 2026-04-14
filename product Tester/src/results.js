@@ -127,7 +127,8 @@ class ResultsManager {
     });
   }
 
-  buildReport(summary) {
+  buildReport(summary, targetReportPath) {
+    const reportPathForLinks = targetReportPath || this.reportPath;
     const passRate = summary.total === 0 ? 0 : Math.round((summary.passed / summary.total) * 100);
     const lines = [
       '# Báo Cáo Kiểm Thử',
@@ -164,10 +165,10 @@ class ResultsManager {
       lines.push(`- **Kết quả mong đợi:** ${result.expected || '-'}`);
       lines.push(`- **Ghi chú:** ${result.note || '-'}`);
       if (result.evidence?.screenshotPath) {
-        lines.push(`- **Ảnh chụp:** [Xem ảnh](${toRelativeLink(this.reportPath, result.evidence.screenshotPath)})`);
+        lines.push(`- **Ảnh chụp:** [Xem ảnh](${toRelativeLink(reportPathForLinks, result.evidence.screenshotPath)})`);
       }
       if (result.evidence?.videoPath) {
-        lines.push(`- **Video:** [Xem video](${toRelativeLink(this.reportPath, result.evidence.videoPath)})`);
+        lines.push(`- **Video:** [Xem video](${toRelativeLink(reportPathForLinks, result.evidence.videoPath)})`);
       }
       lines.push('', '---', '');
     });
@@ -179,12 +180,11 @@ class ResultsManager {
     const summaryPath = path.join(this.currentRunFolder, 'summary.json');
     this.reportPath = path.join(this.currentRunFolder, 'report.md');
     const summary = this.buildSummary();
-    summary.reportPath = this.reportPath;
-
+    const externalReportPath = path.join(config.REPORTS_DIR, `${path.basename(this.currentRunFolder)}.md`);
     await fs.writeJson(summaryPath, summary, { spaces: 2 });
     await fs.writeJson(path.join(config.RESULTS_DIR, 'latest-run.json'), summary, { spaces: 2 });
-    await fs.writeFile(this.reportPath, this.buildReport(summary), 'utf8');
-    await fs.copy(this.reportPath, path.join(config.REPORTS_DIR, `${path.basename(this.currentRunFolder)}.md`));
+    await fs.writeFile(this.reportPath, this.buildReport(summary, this.reportPath), 'utf8');
+    await fs.writeFile(externalReportPath, this.buildReport(summary, externalReportPath), 'utf8');
     await this.writePlan();
 
     logger.success(`Run finalized. Summary: ${summary.passed} Passed, ${summary.failed} Failed, ${summary.blocked} Blocked.`);

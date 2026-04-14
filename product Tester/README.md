@@ -175,7 +175,38 @@ node src/index.js run ./templates/test-cases.xlsx --headed --target-url http://l
 
 ---
 
-## 8. Cấu trúc thư mục quan trọng
+## 8. Khả năng tương tác nâng cao (Phase B)
+
+Ngoài các flow form cơ bản, engine hiện đã hỗ trợ thêm một số pattern để chạy trên website phức tạp hơn:
+
+- chọn option trong dropdown / combobox
+- thao tác action theo từng row trong table/grid
+- upload file qua `input[type="file"]`
+- chuyển context vào `iframe`
+- chuyển context vào shadow host cơ bản
+- assert thêm cho toast/snackbar, badge/status và table row
+
+Ví dụ step hiện có thể parse:
+
+```text
+Select "Admin" from "Role"
+Click "Edit" for row "john@example.com"
+Upload "./fixtures/avatar.png" to "Profile Image"
+Switch to iframe "payment-frame"
+Switch back to main content
+Switch to shadow host "user-menu"
+Switch back to normal context
+```
+
+Giới hạn hiện tại:
+
+- shadow DOM mới hỗ trợ mức cơ bản qua host locator
+- iframe cần nhận diện được qua `name`, `id`, `title` hoặc `src`
+- dropdown custom quá đặc thù vẫn có thể cần viết step rõ hơn
+
+---
+
+## 9. Cấu trúc thư mục quan trọng
 
 ```text
 product Tester/
@@ -210,9 +241,9 @@ product Tester/
 
 ---
 
-## 9. Đọc kết quả như thế nào?
+## 10. Đọc kết quả như thế nào?
 
-### 9.1 `templates/test-cases.md`
+### 10.1 `templates/test-cases.md`
 
 Đây là file review test plan.
 
@@ -224,7 +255,7 @@ Sau khi chạy test, file này được cập nhật thêm:
 - link video
 - bảng tổng hợp cuối file
 
-### 9.2 `runs/run_<timestamp>/report.md`
+### 10.2 `runs/run_<timestamp>/report.md`
 
 Đây là báo cáo tổng cuối run:
 
@@ -232,7 +263,7 @@ Sau khi chạy test, file này được cập nhật thêm:
 - chi tiết từng case
 - link ảnh và video cho từng case
 
-### 9.3 `runs/run_<timestamp>/summary.json`
+### 10.3 `runs/run_<timestamp>/summary.json`
 
 Đây là file dữ liệu để script khác có thể đọc tự động.
 
@@ -242,7 +273,7 @@ Ngoài ra:
 
 ---
 
-## 10. Các tình huống thường gặp
+## 11. Các tình huống thường gặp
 
 ### Trường hợp 1 — test fail vì dữ liệu thật của app
 
@@ -274,7 +305,7 @@ Chế độ mặc định dừng **1 giây** sau mỗi bước để video quay 
 
 ---
 
-## 11. Gợi ý demo cho người khác xem
+## 12. Gợi ý demo cho người khác xem
 
 Thứ tự mở màn hình nên là:
 
@@ -290,7 +321,7 @@ Người xem sẽ hiểu được trọn luồng:
 
 ---
 
-## 12. Nếu muốn đọc mã nguồn thì bắt đầu ở đâu?
+## 13. Nếu muốn đọc mã nguồn thì bắt đầu ở đâu?
 
 - `src/index.js` — entry point CLI
 - `src/parser.js` — đọc Excel và chuẩn hóa test case
@@ -300,7 +331,7 @@ Người xem sẽ hiểu được trọn luồng:
 
 ---
 
-## 13. Đọc gì tiếp theo?
+## 14. Đọc gì tiếp theo?
 
 - Muốn chạy nhanh ngay: mở `quickstart.md`
 - Muốn mang sang máy khác: mở `PORTABILITY.md`

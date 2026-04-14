@@ -31,22 +31,21 @@ function sanitizeFileSegment(value) {
 }
 
 function splitSteps(raw) {
-  const input = normalizeWhitespace(raw)
-    .replace(/(TC-\d+)(?=\d+\.\s)/gi, '$1 ')
-    .replace(/(\"[^\"]+\")(?=\d+\.\s)/g, '$1 ');
+  if (!raw) return [];
+  const input = String(raw).trim();
 
-  if (!input) return [];
-
-  const numberedMatches = [...input.matchAll(/(?:^|\n|\s)(\d+\.\s.*?)(?=(?:\s\d+\.\s)|(?:\n\d+\.\s)|$)/gs)]
-    .map((match) => normalizeWhitespace(match[1]).replace(/^\d+\.\s*/, ''))
+  // Try to match numbered steps: 1. ... 2. ...
+  const numberedMatches = [...input.matchAll(/(?:^|\n)\s*(\d+[\s.)\-]+.*?)(?=(?:\n\s*\d+[\s.)\-]+)|$)/gs)]
+    .map((match) => normalizeWhitespace(match[1]).replace(/^\d+[\s.)\-]+/, ''))
     .filter(Boolean);
 
   if (numberedMatches.length > 0) {
     return numberedMatches;
   }
 
+  // Fallback to newline split or bullet points
   return input
-    .split('\n')
+    .split(/\n+/)
     .map((step) => normalizeWhitespace(step).replace(/^[-*]\s*/, ''))
     .filter(Boolean);
 }
