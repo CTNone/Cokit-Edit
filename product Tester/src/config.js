@@ -27,10 +27,10 @@ module.exports = {
   // File Paths & Excel Template Spec
   DEFAULT_XLSX_PATH: './templates/test-cases.xlsx',
   ARTIFACTS_DIR: 'artifacts', // Thư mục lưu evidence (ảnh/video)
-  RESULTS_DIR: process.env.RESULTS_DIR || path.join(ROOT_DIR, 'runs'), 
+  RESULTS_DIR: process.env.RESULTS_DIR || path.join(ROOT_DIR, 'runs'),
   REPORTS_DIR: process.env.REPORTS_DIR || path.join(ROOT_DIR, 'runs', 'reports'),
 
-  // LLM Provider 
+  // LLM Provider
   LLM_PROVIDER: process.env.E2E_LLM_PROVIDER || 'ollama',
   LLM_BASE_URL: process.env.E2E_LLM_BASE_URL || 'http://127.0.0.1:11434/v1',
   LLM_MODEL: process.env.E2E_LLM_MODEL || 'llama3.1:8b', // 'gemma3:4b' or any fast local model
