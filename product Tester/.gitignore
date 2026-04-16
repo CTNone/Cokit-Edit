@@ -1,8 +1,7 @@
-node_modules/
-dist/
-build/
-*.log
-.env*
+.browser-data/
 runs/
-test-plan.md
-test-results/
+node_modules/
+.env
+*.log
+.DS_Store
+.grapuco/

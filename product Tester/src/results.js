@@ -165,10 +165,13 @@ class ResultsManager {
       lines.push(`- **Kết quả mong đợi:** ${result.expected || '-'}`);
       lines.push(`- **Ghi chú:** ${result.note || '-'}`);
       if (result.evidence?.screenshotPath) {
-        lines.push(`- **Ảnh chụp:** [Xem ảnh](${toRelativeLink(reportPathForLinks, result.evidence.screenshotPath)})`);
+        lines.push(`- **Ảnh kết quả cuối:** [Xem ảnh](${toRelativeLink(reportPathForLinks, result.evidence.screenshotPath)})`);
       }
-      if (result.evidence?.videoPath) {
-        lines.push(`- **Video:** [Xem video](${toRelativeLink(reportPathForLinks, result.evidence.videoPath)})`);
+      if (result.evidence?.stepScreenshots && result.evidence.stepScreenshots.length > 0) {
+        lines.push('- **Bằng chứng từng bước:**');
+        result.evidence.stepScreenshots.forEach((ss) => {
+          lines.push(`  - Bước ${ss.step}: ${ss.action} - [Xem ảnh](${toRelativeLink(reportPathForLinks, ss.path)})`);
+        });
       }
       lines.push('', '---', '');
     });

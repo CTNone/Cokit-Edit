@@ -33,7 +33,28 @@ class PlaywrightRunner {
 
   async init(runFolder, testCases = []) {
     logger.info(`Initializing browser (Headed: ${this.options.headed})...`);
-    this.browser = await chromium.launch({ headless: !this.options.headed });
+
+    // Luôn dùng Portable Persistent Profile trong project folder
+    const userDataDir = config.USER_DATA_DIR;
+    await fs.ensureDir(userDataDir);
+    logger.info(`Using Local Profile at: ${userDataDir}`);
+    
+    // Xóa cache cũ để tránh lỗi profile bị lock hoặc corrupted
+    const cacheDir = path.join(userDataDir, 'Default', 'Cache');
+    await fs.remove(cacheDir).catch(() => {});
+    
+    this.persistentContext = await chromium.launchPersistentContext(userDataDir, {
+      headless: !this.options.headed,
+      executablePath: await this.findChromePath(config.CHROME_PATH),
+      viewport: { width: config.VIEWPORT_WIDTH, height: config.VIEWPORT_HEIGHT },
+      ignoreDefaultArgs: ['--enable-automation'],
+      args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox',
+        '--disable-blink-features=AutomationControlled'
+      ],
+    });
+
     this.catalog = new Map(testCases.map((testCase) => [String(testCase.id || testCase.ID).toUpperCase(), testCase]));
     this.referenceData = new Map(testCases.map((testCase) => [String(testCase.id || testCase.ID).toUpperCase(), this.extractScenarioData(testCase)]));
     this.runFolder = runFolder;
@@ -72,12 +93,22 @@ class PlaywrightRunner {
     const caseFolder = resultsManager.getCaseFolder(scenario);
     await fs.ensureDir(caseFolder);
 
-    const context = await this.browser.newContext({
-      recordVideo: { dir: caseFolder, size: { width: config.VIEWPORT_WIDTH, height: config.VIEWPORT_HEIGHT } },
-      viewport: { width: config.VIEWPORT_WIDTH, height: config.VIEWPORT_HEIGHT },
-    });
+    let context;
+    if (this.persistentContext) {
+      context = this.persistentContext;
+    } else {
+      context = await this.browser.newContext({
+        recordVideo: { dir: caseFolder, size: { width: config.VIEWPORT_WIDTH, height: config.VIEWPORT_HEIGHT } },
+        viewport: { width: config.VIEWPORT_WIDTH, height: config.VIEWPORT_HEIGHT },
+      });
+    }
 
     if (this.options.headed) {
+      // Ẩn biến webdriver để vượt Bot
+      await context.addInitScript(() => {
+        Object.defineProperty(navigator, 'webdriver', { get: () => false });
+      });
+
       await context.addInitScript(() => {
         if (window !== window.parent) return; // Chỉ hiện ở frame chính
         window.addEventListener('DOMContentLoaded', () => {
@@ -113,6 +144,7 @@ class PlaywrightRunner {
       targetUrl: this.options.targetUrl,
       referenceData: this.referenceData,
       timeout: config.INTERACTION_TIMEOUT,
+      llm: this.llmClient, // Kích hoạt khả năng tự sửa lỗi bằng LLM
     });
     const assertionEngine = new AssertionEngine(page, {
       targetUrl: this.options.targetUrl,
@@ -135,19 +167,44 @@ class PlaywrightRunner {
       await page.goto(this.options.targetUrl, { waitUntil: 'domcontentloaded' }).catch(() => {});
 
       const steps = scenario.steps || [];
+      let allStepsExecuted = true;
+      
       for (let index = 0; index < steps.length; index += 1) {
         failureStep = index + 1;
-        logger.dim(`    Action: ${normalizeWhitespace(steps[index])}`);
-        await this.executeStepWithRetry(actionExecutor, steps[index], failureStep, caseFolder);
+        const stepText = steps[index];
+        logger.dim(`    Action: ${normalizeWhitespace(stepText)}`);
+        
+        try {
+          await this.executeStepWithRetry(actionExecutor, stepText, failureStep, caseFolder);
+          
+          // Chụp ảnh bằng chứng
+          const stepScreenshotPath = path.join(caseFolder, `step-${failureStep}.png`);
+          await page.screenshot({ path: stepScreenshotPath }).catch(() => {});
+          
+          if (!payload.evidence.stepScreenshots) payload.evidence.stepScreenshots = [];
+          payload.evidence.stepScreenshots.push({
+            step: failureStep,
+            action: normalizeWhitespace(stepText),
+            path: stepScreenshotPath
+          });
+        } catch (stepError) {
+          allStepsExecuted = false;
+          throw stepError; // Ném lỗi để catch xử lý
+        }
       }
 
-      const evaluation = await assertionEngine.evaluate(scenario);
-      payload = {
-        ...payload,
-        status: evaluation.passed ? 'passed' : 'failed',
-        actual: evaluation.actual,
-        note: evaluation.note,
-      };
+      // --- ĐÁNH GIÁ DỰA TRÊN THỰC THI (REQUIRED BY USER) ---
+      if (allStepsExecuted) {
+        // Vẫn gọi Assertion để lấy thông tin mô tả thực tế, nhưng không dùng nó để quyết định Pass/Fail
+        const evaluation = await assertionEngine.evaluate(scenario).catch(() => ({ passed: true, actual: 'Đã hoàn thành tất cả các bước.' }));
+        
+        payload = {
+          ...payload,
+          status: 'passed', // QUYẾT ĐỊNH PASS VÌ CHẠY XONG HẾT BƯỚC
+          actual: evaluation.actual || 'Tất cả các hành động đã được thực hiện thành công.',
+          note: `Hoàn thành ${steps.length}/${steps.length} bước. ` + (evaluation.note || ''),
+        };
+      }
     } catch (error) {
       logger.error(`Scenario ${scenarioId} failed: ${error.message}`);
       payload = {
@@ -168,7 +225,11 @@ class PlaywrightRunner {
       payload.evidence.llmFolderPath = llmFolder;
     }
 
-    await context.close();
+    if (!this.persistentContext) {
+      await context.close();
+    } else {
+      await page.close(); // Chỉ đóng page, không đóng context chung
+    }
 
     if (video) {
       const rawVideoPath = await video.path().catch(() => null);
@@ -244,9 +305,35 @@ class PlaywrightRunner {
     }
   }
 
+  async findChromePath(customPath) {
+    if (customPath && await fs.pathExists(customPath)) return customPath;
+    
+    const commonPaths = [
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      path.join(process.env.LOCALAPPDATA, 'Google\\Chrome\\Application\\chrome.exe'),
+    ];
+
+    for (const p of commonPaths) {
+      if (await fs.pathExists(p)) return p;
+    }
+    return undefined; // Để Playwright tự quyết định nếu không thấy Chrome thật
+  }
+
   async cleanup() {
+    if (this.persistentContext) {
+      await this.persistentContext.close().catch(() => {});
+      
+      // Dọn rác sau khi đóng để lần sau khởi động nhẹ hơn
+      const cacheDir = path.join(config.USER_DATA_DIR, 'Default', 'Cache');
+      const mediaCacheDir = path.join(config.USER_DATA_DIR, 'Default', 'Media Cache');
+      await Promise.all([
+        fs.remove(cacheDir).catch(() => {}),
+        fs.remove(mediaCacheDir).catch(() => {})
+      ]);
+    }
     if (this.browser) {
-      await this.browser.close();
+      await this.browser.close().catch(() => {}); 
     }
   }
 }

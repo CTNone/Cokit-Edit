@@ -24,6 +24,12 @@ module.exports = {
   MOBILE_VIEWPORT_WIDTH: 390,
   MOBILE_VIEWPORT_HEIGHT: 844,
 
+  // Persistent Profile Config
+  USE_PERSISTENT_PROFILE: true,
+  USER_DATA_DIR: process.env.USER_DATA_DIR || path.join(ROOT_DIR, '.browser-data'), 
+  PROFILE_NAME: process.env.PROFILE_NAME || 'Default',
+  CHROME_PATH: process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+
   // File Paths & Excel Template Spec
   DEFAULT_XLSX_PATH: './templates/test-cases.xlsx',
   ARTIFACTS_DIR: 'artifacts', // Thư mục lưu evidence (ảnh/video)

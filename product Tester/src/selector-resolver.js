@@ -8,6 +8,7 @@ class SelectorResolver {
   constructor(page, options = {}) {
     this.page = page;
     this.timeout = options.timeout || 5000;
+    this.llm = options.llm; // LLM Provider để tự sửa lỗi
     this.frame = null;
     this.shadowHost = null;
   }
@@ -85,7 +86,102 @@ class SelectorResolver {
     return locator;
   }
 
+  async discoverInteractiveElements() {
+    return await this.page.evaluate(() => {
+      const elements = Array.from(document.querySelectorAll('button, a, input, select, textarea, [role="button"], [role="link"], [role="menuitem"], [onclick]'));
+      return elements
+        .filter(el => {
+          const rect = el.getBoundingClientRect();
+          const style = window.getComputedStyle(el);
+          return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+        })
+        .slice(0, 100) // Giới hạn 100 phần tử để không làm quá tải Llama
+        .map((el, index) => {
+          // Tạo một CSS selector đơn giản nhất có thể cho mỗi phần tử
+          let simpleSelector = el.tagName.toLowerCase();
+          if (el.id) simpleSelector += `#${el.id}`;
+          else if (el.name) simpleSelector += `[name="${el.name}"]`;
+          
+          return {
+            index,
+            tag: el.tagName.toLowerCase(),
+            text: (el.innerText || el.value || '').trim().substring(0, 50),
+            placeholder: el.placeholder || '',
+            id: el.id || '',
+            name: el.name || '',
+            ariaLabel: el.getAttribute('aria-label') || '',
+            role: el.getAttribute('role') || '',
+            selector: simpleSelector
+          };
+        });
+    });
+  }
+
+  async selfHeal(options) {
+    if (!this.llm) return null;
+    
+    console.log(`    [Self-Healing] Đang tìm phần tử thay thế cho: "${options.description}" bằng LLM...`);
+    const elements = await this.discoverInteractiveElements();
+    
+    const prompt = `
+BẠN LÀ CHUYÊN GIA AUTOMATION TEST.
+Nhiệm vụ: Tìm phần tử phù hợp nhất cho hành động: "${options.description}"
+
+DANH SÁCH PHẦN TỬ:
+${elements.map(el => `[Index ${el.index}] Tag: ${el.tag}, Text: "${el.text}", Selector: "${el.selector}"`).join('\n')}
+
+QUY TẮC CHỌN (BẮT BUỘC):
+1. CHỈ ĐƯỢC CHỌN TỪ DANH SÁCH TRÊN. KHÔNG ĐƯỢC TỰ CHẾ SELECTOR.
+2. Trả về chính xác số Index và Selector của phần tử đó.
+3. Ưu tiên nút bấm chính (Login/Sign in), tránh các nút phụ (Remember me).
+
+TRẢ VỀ JSON:
+{
+  "found": true,
+  "index": number,
+  "reason": "Giải thích ngắn gọn lý do chọn",
+  "selector": "Phải là selector nguyên bản từ danh sách trên"
+}
+    `;
+
+    try {
+      const chatResponse = await this.llm.chat([
+        { role: 'user', content: prompt }
+      ]);
+      
+      const rawText = chatResponse.text;
+      const start = rawText.indexOf('{');
+      const end = rawText.lastIndexOf('}');
+      
+      if (start === -1 || end === -1) {
+        throw new Error('Không tìm thấy JSON trong phản hồi của LLM');
+      }
+      
+      let jsonString = rawText.slice(start, end + 1);
+      // Sửa lỗi escape character thường gặp ở Llama 3.1 8B
+      jsonString = jsonString
+        .replace(/\\(?!"|\\|\/|b|f|n|r|t|u)/g, '\\\\') 
+        .replace(/[\u0000-\u001F]+/g, ' ');
+
+      const result = JSON.parse(jsonString);
+
+      if (result.found && result.selector) {
+        console.log(`    [Self-Healing] LLM gợi ý dùng: "${result.selector}" (Lý do: ${result.reason})`);
+        // Thử locator mới từ LLM
+        const healedLocator = this.page.locator(result.selector).first();
+        if (await healedLocator.isVisible()) {
+          return this.prepare(healedLocator, options);
+        }
+      }
+    } catch (err) {
+      console.log(`    [Self-Healing] Thất bại: ${err.message}`);
+    }
+
+    return null;
+  }
+
   async resolveFirst(candidates, options = {}) {
+    // 1. Thử các cách tìm kiếm thông thường (Deterministic)
     for (const candidate of candidates) {
       if (!candidate) continue;
 
@@ -104,6 +200,10 @@ class SelectorResolver {
         }
       }
     }
+
+    // 2. Nếu thất bại, thử Self-healing bằng LLM (Semantic)
+    const healed = await this.selfHeal(options);
+    if (healed) return healed;
 
     throw createInteractionError(
       'selector_fail',

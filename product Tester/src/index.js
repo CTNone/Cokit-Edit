@@ -87,8 +87,12 @@ async function runExecution(options, testCases = null) {
     }
 
     if (options.select) {
-      const ids = options.select.split(',').map(id => id.trim());
-      casesToRun = testCases.filter(tc => ids.includes(tc.id) || ids.includes(tc.ID.toString()) || ids.includes(tc.title) || ids.includes(tc.Scenario));
+      const ids = options.select.split(',').map(id => id.trim().toUpperCase());
+      casesToRun = testCases.filter(tc => {
+        const tcId = String(tc.id || tc.ID || '').toUpperCase();
+        const tcTitle = String(tc.title || tc.Scenario || '').toUpperCase();
+        return ids.includes(tcId) || ids.includes(tcTitle);
+      });
     }
 
     const runFolder = await resultsManager.initRun({

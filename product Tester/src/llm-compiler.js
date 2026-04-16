@@ -15,35 +15,31 @@ DSL Syntax Reference:
 - Content View: 
   [SCROLL] "bottom", [SCROLL] "top"
   [SCROLL_TO] "element_name"
-  [MOBILE VIEW] (Chuyển sang giao diện di động)
-  [READ] "context" (Đọc hoặc quan sát nội dung cụ thể)
-  [LOOK AT] "context" (Nhìn vào một vùng cụ thể)
+  [READ] "context"
 - Forms & Inputs: 
-  [FILL] "field_name" : "value" (e.g. Nhập email tester@test.com -> [FILL] "email" : "tester@test.com")
+  [FILL] "field_name" : "value" (Chấp nhận cả các chuỗi bảo mật như "' OR 1=1 --")
   [SELECT] "dropdown_name" : "option"
-  [CHECK] "checkbox_or_radio_name"
-  [UPLOAD] "file_path" -> "input_name"
-- Auth & Data Tracking: 
-  [AUTH] login using "TC-xx"
-  [AUTH] enter_email using "TC-xx"
-- Interaction: 
-  [HOVER] "target" (e.g. Di chuột vào nút -> [HOVER] "nút")
-  [CLICK] "target" (e.g. Click Đăng nhập -> [CLICK] "Đăng nhập")
-  [PRESS] "Enter"
-- Unrecognized: If a step cannot be mapped to ANY standard action above, keep it as [UNKNOWN] "original_text".
+  [CLICK] "target"
+  [HOVER] "target" (BẮT BUỘC dùng khi cần mở menu ẩn, dropdown)
+- REPETITION & LOOPS (CRITICAL):
+  Nếu một bước yêu cầu lặp lại nhiều lần (Ví dụ: "Nhập sai 5 lần"), bạn PHẢI tự động sinh ra ĐẦY ĐỦ số lượng các bước DSL lặp lại tương ứng.
+  - Ví dụ: "Nhập sai mật khẩu 2 lần" -> Sinh ra 2 bộ [FILL] + [CLICK].
+
+- BỐI CẢNH MINI UNIGATE: 
+  Để đăng xuất (Logout), hệ thống yêu cầu người dùng phải [HOVER] vào tên tài khoản (Ví dụ: "admin") trước, sau đó mới [CLICK] "logout".
+
+- Unrecognized: If a step cannot be mapped, keep it as [UNKNOWN] "original_text".
 
 Examples:
 Input:
-1. Enter into website
-2. move the mouse to dowload button
-3. click button dowload
-4. nhập email: admin@test.com
+1. Đăng nhập admin
+2. Thực hiện đăng xuất
 
 Output:
-1. [GOTO] "website"
-2. [HOVER] "dowload button"
-3. [CLICK] "button dowload"
-4. [FILL] "email" : "admin@test.com"
+1. [FILL] "username" : "admin"
+2. [CLICK] "login"
+3. [HOVER] "admin"
+4. [CLICK] "logout"
 `;
   }
 

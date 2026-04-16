@@ -9,7 +9,10 @@ class ActionExecutor {
     this.targetUrl = options.targetUrl;
     this.referenceData = options.referenceData || new Map();
     this.timeout = options.timeout || 5000;
-    this.selectorResolver = new SelectorResolver(page, { timeout: this.timeout });
+    this.selectorResolver = new SelectorResolver(page, { 
+      timeout: this.timeout,
+      llm: options.llm // Truyền LLM vào để tự sửa lỗi
+    });
 
     // Initialize Action Modules
     this.navigationAction = new NavigationAction(page, this.selectorResolver, { targetUrl: this.targetUrl });
