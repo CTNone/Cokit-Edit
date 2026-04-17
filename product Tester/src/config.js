@@ -6,13 +6,13 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 module.exports = {
   // URLs & Navigation
   TARGET_URL: process.env.TARGET_URL || 'https://demowebshop.tricentis.com/',
-  LOGIN_PAGE_PATTERN: 'login', // Regex pattern to match login page
-  DASHBOARD_PAGE_PATTERN: 'dashboard|admin', // Regex pattern to match dashboard page
+  LOGIN_PAGE_PATTERN: 'login|auth', // Regex pattern to match login page
+  DASHBOARD_PAGE_PATTERN: 'dashboard|admin|home|portal|index|account', // Regex pattern to match dashboard page
 
   // Execution & Delays
   INTERACTION_TIMEOUT: Number(process.env.INTERACTION_TIMEOUT || 5000),
   ASSERTION_TIMEOUT: Number(process.env.ASSERTION_TIMEOUT || 15000), // Max wait time for LLM assertion rules
-  STEP_RETRY_LIMIT: Number(process.env.STEP_RETRY_LIMIT || 2), // Auto-heal retry limit
+  STEP_RETRY_LIMIT: 1, // Tắt retry, hỏng là dừng hoặc dùng AI cứu ngay
   STEP_DELAY: Number(process.env.STEP_DELAY || 5000), // Default 1s delay between steps for visibility
   EXECUTION_MODE: process.env.EXECUTION_MODE || 'rule',
   LLM_TIMEOUT: Number(process.env.LLM_TIMEOUT || 45000),

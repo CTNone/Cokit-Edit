@@ -19,7 +19,7 @@ class StepInterpreter {
     const prompt = [
       'Bạn là bộ fallback interpreter cho Playwright test CLI.',
       'Nhiệm vụ: diễn giải step tự do thành 1 action JSON duy nhất.',
-      'Chỉ dùng các action type đã hỗ trợ: noop, goto-page, goto-url, reference-login, reference-email, fill, click, select-option, upload-file, table-row-action, switch-iframe, switch-main-content, switch-shadow, switch-page-context, press-enter, scroll-down, set-viewport-mobile.',
+      'Chỉ dùng các action type đã hỗ trợ: noop, goto-url, observe, click, hover, press, fill, select-option, check, upload-file, switch-window, close-window, scroll, scroll-to, mobile-view, reference-login, reference-email.',
       'Nếu không suy ra chắc chắn, trả type = unsupported.',
       'Trả về JSON có dạng: {"action": {...}, "reasoning": "...", "confidence": 0-1}.',
       `Step: ${normalizeWhitespace(stepText)}`,

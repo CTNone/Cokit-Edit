@@ -12,18 +12,21 @@ DSL Syntax Reference:
 - Navigation: 
   [GOTO] "url_or_phrase" (e.g. Truy cập website -> [GOTO] "website")
   [NAV] "back", [NAV] "next", [NAV] "refresh"
-- Content View: 
+- Content View & Windows: 
   [SCROLL] "bottom", [SCROLL] "top"
   [SCROLL_TO] "element_name"
-  [READ] "context"
+  [SWITCH_WINDOW] "title_or_url" (e.g. Chuyển sang tab HRM -> [SWITCH_WINDOW] "HRM")
+  [CLOSE_WINDOW] (e.g. Đóng tab hiện tại -> [CLOSE_WINDOW])
+- Assertion & Observation:
+  [OBSERVE] "description" (e.g. Quan sát danh sách ứng dụng -> [OBSERVE] "danh sách ứng dụng")
 - Forms & Inputs: 
-  [FILL] "field_name" : "value" (Chấp nhận cả các chuỗi bảo mật như "' OR 1=1 --")
+  [FILL] "field_name" : "value"
   [SELECT] "dropdown_name" : "option"
-  [CLICK] "target"
+  [CLICK] "target" (Dùng cho cả việc click vào card, icon, link)
   [HOVER] "target" (BẮT BUỘC dùng khi cần mở menu ẩn, dropdown)
+
 - REPETITION & LOOPS (CRITICAL):
   Nếu một bước yêu cầu lặp lại nhiều lần (Ví dụ: "Nhập sai 5 lần"), bạn PHẢI tự động sinh ra ĐẦY ĐỦ số lượng các bước DSL lặp lại tương ứng.
-  - Ví dụ: "Nhập sai mật khẩu 2 lần" -> Sinh ra 2 bộ [FILL] + [CLICK].
 
 - BỐI CẢNH MINI UNIGATE: 
   Để đăng xuất (Logout), hệ thống yêu cầu người dùng phải [HOVER] vào tên tài khoản (Ví dụ: "admin") trước, sau đó mới [CLICK] "logout".
@@ -33,13 +36,17 @@ DSL Syntax Reference:
 Examples:
 Input:
 1. Đăng nhập admin
-2. Thực hiện đăng xuất
+2. Click vào App HRM (mở tab mới)
+3. Chuyển sang tab HRM và quan sát
+4. Đóng tab
 
 Output:
 1. [FILL] "username" : "admin"
 2. [CLICK] "login"
-3. [HOVER] "admin"
-4. [CLICK] "logout"
+3. [CLICK] "App HRM"
+4. [SWITCH_WINDOW] "HRM"
+5. [OBSERVE] "context"
+6. [CLOSE_WINDOW]
 `;
   }
 

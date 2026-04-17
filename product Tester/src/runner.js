@@ -23,12 +23,50 @@ class PlaywrightRunner {
     };
     this.options.targetUrl = normalizeUrl(this.options.targetUrl);
     this.browser = null;
+    this.persistentContext = null;
     this.catalog = new Map();
     this.referenceData = new Map();
+    this.completedScenarios = new Map(); // Lưu kết quả của các kịch bản đã chạy: id -> status
     this.stepParser = new StepParser();
     this.llmClient = null;
     this.stepInterpreter = null;
     this.llmAssertionHelper = null;
+    this.activePage = null; // Quản lý page đang hoạt động để duy trì dòng chảy (Continuity)
+    this.executionQueue = []; // Danh sách kịch bản còn lại trong lượt run này
+  }
+
+  // Chuẩn hóa ID: "TC1-Passed" -> "TC-01"
+  normalizeId(rawId) {
+    if (!rawId) return '';
+    // Xóa tất cả các hậu tố trạng thái tiềm năng để lấy ID gốc
+    let id = String(rawId).toUpperCase()
+      .replace(/-?(PASSED|FAILED|BLOCKED|SKIPPED)$/i, '')
+      .trim();
+    const match = id.match(/^TC\W*(\d+)$/);
+    if (match) {
+      const num = match[1];
+      return `TC-${num.padStart(2, '0')}`;
+    }
+    return id;
+  }
+
+  _parseDependencies(raw) {
+    if (!raw) return [];
+    return String(raw).split(',').map(part => {
+      const trimmed = part.trim();
+      const statusMatch = trimmed.match(/-?(PASSED|FAILED|BLOCKED|SKIPPED)$/i);
+      const expectedStatus = statusMatch ? statusMatch[1].toLowerCase() : 'passed';
+      const rawId = statusMatch ? trimmed.substring(0, statusMatch.index) : trimmed;
+      return {
+        id: this.normalizeId(rawId),
+        expectedStatus,
+        raw: trimmed
+      };
+    });
+  }
+
+  setExecutionQueue(cases) {
+    this.executionQueue = [...cases];
   }
 
   async init(runFolder, testCases = []) {
@@ -55,8 +93,28 @@ class PlaywrightRunner {
       ],
     });
 
-    this.catalog = new Map(testCases.map((testCase) => [String(testCase.id || testCase.ID).toUpperCase(), testCase]));
-    this.referenceData = new Map(testCases.map((testCase) => [String(testCase.id || testCase.ID).toUpperCase(), this.extractScenarioData(testCase)]));
+    this.persistentContext.on('page', async (page) => {
+      const scenarioId = this.currentScenarioId || 'System';
+      logger.info(`    [Window] Một cửa sổ mới phát hiện (từ ${scenarioId}).`);
+      this.activePage = page;
+      
+      // Chờ page load sơ bộ để lấy Title/URL
+      await page.waitForLoadState('domcontentloaded').catch(() => {});
+      const title = await page.title().catch(() => 'Untitled');
+      logger.success(`    [Window] Đã tự động chuyển quyền điều khiển sang: "${title}"`);
+    });
+
+    // Capture initial blank page if it exists
+    const initialPages = this.persistentContext.pages();
+    if (initialPages.length > 0) {
+      this.activePage = initialPages[0];
+      logger.dim('    [Init] Đã gán activePage vào Tab đầu tiên có sẵn.');
+    }
+
+    this.catalog = new Map(testCases.map((testCase) => [this.normalizeId(testCase.id || testCase.ID), testCase]));
+    this.referenceData = new Map(testCases.map((testCase) => [this.normalizeId(testCase.id || testCase.ID), this.extractScenarioData(testCase)]));
+    
+    logger.dim(`    [Debug] Catalog IDs: ${Array.from(this.catalog.keys()).join(', ')}`);
     this.runFolder = runFolder;
 
     if (this.options.mode === 'hybrid') {
@@ -85,32 +143,81 @@ class PlaywrightRunner {
     };
   }
 
-  async runScenario(scenario) {
-    const scenarioId = scenario.id || scenario.ID;
+  async runScenario(scenario, keepOpen = false) {
+    const scenarioId = this.normalizeId(scenario.id || scenario.ID);
+    this.currentScenarioId = scenarioId;
+    
+    // Cập nhật hàng chờ: loại bỏ scenario hiện tại khỏi queue nếu nó đang ở đầu
+    if (this.executionQueue.length > 0 && this.normalizeId(this.executionQueue[0].id || this.executionQueue[0].ID) === scenarioId) {
+      this.executionQueue.shift();
+    }
+    
+    // Nếu đã chạy rồi thì không chạy lại (Cache)
+    if (this.completedScenarios.has(scenarioId)) {
+      return this.completedScenarios.get(scenarioId);
+    }
+
+    // 1. KIỂM TRA ĐIỀU KIỆN TIÊN QUYẾT (PREREQUISITE)
+    const prereqRaw = scenario.prerequisite || scenario.Prerequisite;
+    const dependencies = this._parseDependencies(prereqRaw);
+    let allPrereqsMatched = true;
+
+    for (const dep of dependencies) {
+      const prereqId = dep.id;
+      logger.info(`    [Dependency] Scenario ${scenarioId} phụ thuộc vào ${prereqId} (${dep.expectedStatus.toUpperCase()}). Đang kiểm tra...`);
+      
+      const prereqScenario = this.catalog.get(prereqId);
+      if (prereqScenario) {
+        const actualStatus = await this.runScenario(prereqScenario, true); // Giữ page mở nếu là prerequisite
+        if (actualStatus !== dep.expectedStatus) {
+          logger.error(`    [Dependency] ${prereqId} có kết quả ${actualStatus}, không khớp với mong đợi: ${dep.expectedStatus}. Chặn ${scenarioId}.`);
+          const blockPayload = {
+            status: 'blocked',
+            actual: `Bị chặn vì kịch bản phụ thuộc ${prereqId} trả về '${actualStatus}', trong khi mong đợi '${dep.expectedStatus}'`,
+            note: `Kiểm tra lại luồng logic giữa ${prereqId} và ${scenarioId}.`,
+            evidence: {}
+          };
+          await resultsManager.addResult(scenario, blockPayload);
+          this.completedScenarios.set(scenarioId, 'blocked');
+          return 'blocked';
+        }
+        logger.success(`    [Dependency] ${prereqId} đã khớp trạng thái '${dep.expectedStatus.toUpperCase()}'.`);
+      } else {
+        logger.warn(`    [Dependency] Không tìm thấy kịch bản ${prereqId} trong danh sách.`);
+      }
+    }
+
     const scenarioTitle = scenario.title || scenario.Scenario;
     logger.step(`Executing Scenario: ${scenarioId} — ${scenarioTitle}`);
+    
+    // Nếu có ít nhất 1 dependency đã chạy thành công (passed) và đang giữ page, ta có thể dùng continuity
+    const hasSuccessfulPrereq = dependencies.some(dep => this.completedScenarios.get(dep.id) === 'passed');
+    const isContinuation = hasSuccessfulPrereq && !!this.activePage;
 
     const caseFolder = resultsManager.getCaseFolder(scenario);
     await fs.ensureDir(caseFolder);
 
-    let context;
-    if (this.persistentContext) {
-      context = this.persistentContext;
-    } else {
-      context = await this.browser.newContext({
-        recordVideo: { dir: caseFolder, size: { width: config.VIEWPORT_WIDTH, height: config.VIEWPORT_HEIGHT } },
-        viewport: { width: config.VIEWPORT_WIDTH, height: config.VIEWPORT_HEIGHT },
-      });
-    }
+    let context = this.persistentContext;
+    let page;
+    let isNewPage = true;
 
-    if (this.options.headed) {
-      // Ẩn biến webdriver để vượt Bot
-      await context.addInitScript(() => {
+    if (this.activePage) {
+      page = this.activePage;
+      isNewPage = false;
+      logger.info(`    [Continuity] Sử dụng lại cửa sổ trình duyệt đang mở.`);
+    } else {
+      page = await context.newPage();
+      this.activePage = page;
+    }
+    const video = page.video();
+
+    if (isNewPage && this.options.headed) {
+      await page.addInitScript(() => {
         Object.defineProperty(navigator, 'webdriver', { get: () => false });
       });
 
-      await context.addInitScript(() => {
-        if (window !== window.parent) return; // Chỉ hiện ở frame chính
+      await page.addInitScript(() => {
+        if (window !== window.parent) return;
         window.addEventListener('DOMContentLoaded', () => {
           const box = document.createElement('playwright-mouse-pointer');
           const style = document.createElement('style');
@@ -138,8 +245,6 @@ class PlaywrightRunner {
       });
     }
 
-    const page = await context.newPage();
-    const video = page.video();
     const actionExecutor = new ActionExecutor(page, {
       targetUrl: this.options.targetUrl,
       referenceData: this.referenceData,
@@ -153,7 +258,9 @@ class PlaywrightRunner {
       onArtifact: async (name, data) => this.writeLlmArtifact(caseFolder, name, data),
     });
 
+    const initialPage = this.activePage; // Ghi nhớ trang gốc trước khi chạy scenario
     let failureStep = null;
+    let wasHealed = false; // Cờ theo dõi rủi ro
     let payload = {
       status: 'failed',
       expected: scenario.expected || scenario['Expected Result'] || '',
@@ -164,7 +271,11 @@ class PlaywrightRunner {
     };
 
     try {
-      await page.goto(this.options.targetUrl, { waitUntil: 'domcontentloaded' }).catch(() => {});
+      if (!isContinuation) {
+        await page.goto(this.options.targetUrl, { waitUntil: 'domcontentloaded' }).catch(() => {});
+      } else {
+        logger.dim(`    [Continuity] Đã ở sẵn trạng thái session, bỏ qua goto: ${this.options.targetUrl}`);
+      }
 
       const steps = scenario.steps || [];
       let allStepsExecuted = true;
@@ -175,9 +286,12 @@ class PlaywrightRunner {
         logger.dim(`    Action: ${normalizeWhitespace(stepText)}`);
         
         try {
-          await this.executeStepWithRetry(actionExecutor, stepText, failureStep, caseFolder);
+          // Luôn đảm bảo ActionExecutor dùng page mới nhất (đề phòng có tab mở ra ở bước trước)
+          actionExecutor.page = this.activePage;
           
-          // Chụp ảnh bằng chứng
+          const stepResult = await this.executeStepWithRetry(actionExecutor, stepText, failureStep, caseFolder);
+          if (stepResult && stepResult.healed) wasHealed = true;
+          
           const stepScreenshotPath = path.join(caseFolder, `step-${failureStep}.png`);
           await page.screenshot({ path: stepScreenshotPath }).catch(() => {});
           
@@ -189,20 +303,28 @@ class PlaywrightRunner {
           });
         } catch (stepError) {
           allStepsExecuted = false;
-          throw stepError; // Ném lỗi để catch xử lý
+          // Ném tiếp lỗi ra ngoài try-catch lớn để xử lý payload failure
+          throw stepError;
         }
       }
 
-      // --- ĐÁNH GIÁ DỰA TRÊN THỰC THI (REQUIRED BY USER) ---
+      // --- ĐÁNH GIÁ DỰA TRÊN THỰC THI (PHÂN LOẠI RỦI RO) ---
       if (allStepsExecuted) {
-        // Vẫn gọi Assertion để lấy thông tin mô tả thực tế, nhưng không dùng nó để quyết định Pass/Fail
-        const evaluation = await assertionEngine.evaluate(scenario).catch(() => ({ passed: true, actual: 'Đã hoàn thành tất cả các bước.' }));
+        // Chờ trang ổn định trước khi đánh giá
+        await page.waitForLoadState('networkidle').catch(() => {});
+        await page.waitForTimeout(500);
+
+        const evaluation = await assertionEngine.evaluate(scenario).catch(() => ({ passed: true, actual: 'Đã hoàn thành.' }));
+        
+        // --- CHẾ ĐỘ THẨM PHÁN TỐI CAO ---
+        // Nếu có sự can thiệp của AI, kết quả Passed/Failed phải tuân theo AI hoàn toàn
+        let finalStatus = wasHealed ? (evaluation.passed ? 'passed' : 'failed') : 'passed';
         
         payload = {
           ...payload,
-          status: 'passed', // QUYẾT ĐỊNH PASS VÌ CHẠY XONG HẾT BƯỚC
-          actual: evaluation.actual || 'Tất cả các hành động đã được thực hiện thành công.',
-          note: `Hoàn thành ${steps.length}/${steps.length} bước. ` + (evaluation.note || ''),
+          status: finalStatus,
+          actual: evaluation.actual || 'Tất cả các hành động đã thành công.',
+          note: evaluation.note || `Hoàn thành thực thi. ${wasHealed ? '[AI Evaluated]' : '[Rule-based]'}`
         };
       }
     } catch (error) {
@@ -225,10 +347,38 @@ class PlaywrightRunner {
       payload.evidence.llmFolderPath = llmFolder;
     }
 
-    if (!this.persistentContext) {
-      await context.close();
-    } else {
-      await page.close(); // Chỉ đóng page, không đóng context chung
+    // KIỂM TRA XEM CÓ AI CẦN PAGE NÀY NỮA KHÔNG (Dependency Matrix)
+    const isNeededByFuture = this.executionQueue.some(next => {
+      const nextPrereqRaw = next.prerequisite || next.Prerequisite;
+      if (!nextPrereqRaw) return false;
+      const nextDeps = this._parseDependencies(nextPrereqRaw);
+      return nextDeps.some(dep => dep.id === scenarioId);
+    });
+
+    if (!keepOpen && !isNeededByFuture) {
+      if (!this.persistentContext) {
+        await context.close();
+      } else {
+        // [Sovereign Page Protocol] Duy nhất activePage là "Chủ quyền"
+        // Nếu Scenario thất bại, ta ưu tiên quay lại trang gốc (initialPage) để bảo toàn flow
+        const survivor = payload.status === 'passed' ? this.activePage : (initialPage || this.activePage);
+        const allPages = context.pages();
+        
+        if (allPages.length > 1 && survivor) {
+          logger.info(`    [Cleanup] ${payload.status === 'passed' ? 'Kết thúc thành công' : 'Thất bại - Đang khôi phục tab gốc'}. Đang đóng các cửa sổ không thuộc chủ quyền...`);
+          for (const p of allPages) {
+            if (p !== survivor && !p.isClosed()) {
+              await p.close().catch(() => {});
+            }
+          }
+          this.activePage = survivor;
+          await survivor.bringToFront().catch(() => {});
+        } else if (allPages.length === 1 && this.executionQueue.length === 0) {
+          logger.info(`    [Cleanup] Đóng trang cuối cùng vì hết hàng chờ.`);
+          await page.close().catch(() => {});
+          this.activePage = null;
+        }
+      }
     }
 
     if (video) {
@@ -243,15 +393,20 @@ class PlaywrightRunner {
     }
 
     await resultsManager.addResult(scenario, payload);
+    this.completedScenarios.set(scenarioId, payload.status);
+
     if (payload.status === 'passed') {
       logger.success(`Scenario ${scenarioId} completed.`);
     } else {
       logger.warn(`Scenario ${scenarioId} finished with status ${payload.status}.`);
     }
+    console.log(''); // Thêm dòng trống để dễ quan sát giữa các testcase
+    return payload.status;
   }
 
   async executeStepWithRetry(actionExecutor, stepText, stepNumber, caseFolder, maxRetries = config.STEP_RETRY_LIMIT) {
     let attempt = 0;
+    let wasHealed = false;
     let action = this.stepParser.parse(stepText);
 
     if (action.type === 'unsupported' && this.stepInterpreter) {
@@ -269,39 +424,64 @@ class PlaywrightRunner {
       }
     }
 
-    while (attempt < maxRetries) {
-      try {
-        await actionExecutor.execute(action);
-        await actionExecutor.page.waitForTimeout(config.STEP_DELAY);
-        return;
-      } catch (error) {
-        attempt += 1;
-        if (this.stepInterpreter && (error.kind === 'selector_fail' || error.kind === 'action_fail')) {
-          try {
-            const llmResult = await this.stepInterpreter.interpretStep(stepText, {
-              targetUrl: this.options.targetUrl,
-              currentUrl: actionExecutor.page.url(),
-              errorMessage: error.message,
-            });
-            await this.writeLlmArtifact(caseFolder, `step-${stepNumber}-recovery-${attempt}`, llmResult).catch(() => {});
-            if (llmResult?.parsed?.action?.type && llmResult.parsed.action.type !== 'unsupported') {
-              action = { ...llmResult.parsed.action, raw: stepText };
-            }
-          } catch (llmError) {
-            await this.writeLlmArtifact(caseFolder, `step-${stepNumber}-recovery-${attempt}-error`, { message: llmError.message }).catch(() => {});
-          }
-        }
+    try {
+      // 1. Thử chạy bằng Rule cứng (Deterministic)
+      await actionExecutor.execute(action);
+      await actionExecutor.page.waitForTimeout(config.STEP_DELAY);
+      return { healed: false };
+    } catch (error) {
+      // 2. Nếu hỏng, thử gọi AI cứu đúng 1 lần duy nhất
+      if (this.stepInterpreter && (error.kind === 'selector_fail' || error.kind === 'action_fail')) {
+        logger.warn(`    [Step Failed] Đang tìm phương án thay thế bằng AI cho: "${stepText}"...`);
+        try {
+          const llmResult = await this.stepInterpreter.interpretStep(stepText, {
+            targetUrl: this.options.targetUrl,
+            currentUrl: actionExecutor.page.url(),
+            errorMessage: error.message,
+          });
 
-        const nonRetryable = error.blocked || error.kind === 'action_fail';
-        if (attempt >= maxRetries || nonRetryable) {
-          error.stepNumber = stepNumber;
-          throw error;
+          await this.writeLlmArtifact(caseFolder, `step-${stepNumber}-ai-recovery`, llmResult).catch(() => {});
+          
+          const aiAction = llmResult?.parsed?.action;
+          const isInteraction = ['click', 'hover', 'double_click'].includes(aiAction?.type);
+          const isInputSelector = /input|textarea|email|username|password/i.test(aiAction?.selector || '');
+
+          if (aiAction?.type && aiAction.type !== 'unsupported' && aiAction.selector !== 'null') {
+            const lowerStep = stepText.toLowerCase();
+            const lowerSelector = String(aiAction.selector).toLowerCase();
+            const lowerReason = String(llmResult?.parsed?.reasoning || '').toLowerCase();
+
+            // KIỂM TRA TÍNH HỢP LÝ: Nếu muốn Nhập liệu (FILL) mà AI lại gợi ý phần tử không phải input (như icon quả địa cầu)
+            if (aiAction.type === 'fill' && !isInputSelector) {
+               logger.error(`    [AI Sanity Check Fail] AI gợi ý nhập liệu vào phần tử không có tính chất input ("${aiAction.selector}"). Từ chối cứu hộ.`);
+            }
+            // KIỂM TRA TÍNH HỢP LÝ: Nếu muốn Click/Hover mà AI lại bảo click vào ô Input -> Từ chối ngay
+            else if (isInteraction && isInputSelector) {
+               logger.error(`    [AI Sanity Check Fail] AI gợi ý tương tác vào ô nhập liệu ("${aiAction.selector}") thay vì nút bấm. Từ chối cứu hộ.`);
+            } 
+            // KIỂM TRA TỪ KHÓA QUAN TRỌNG: Nếu step chứa 'admin' hoặc 'logout' mà AI gợi ý selector không liên quan
+            else if ((lowerStep.includes('admin') && !lowerSelector.includes('admin') && !lowerReason.includes('admin')) ||
+                     (lowerStep.includes('logout') && !lowerSelector.includes('logout') && !lowerReason.includes('logout'))) {
+               logger.error(`    [AI Sanity Check Fail] AI gợi ý phần tử không liên quan cho từ khóa quan trọng ("${stepText}"). Từ chối cứu hộ.`);
+            }
+            else {
+               const finalAiAction = { ...aiAction, raw: stepText };
+               await actionExecutor.execute(finalAiAction);
+               await actionExecutor.page.waitForTimeout(config.STEP_DELAY);
+               return { healed: true };
+            }
+          } else {
+            logger.error(`    [AI Recovery Failed] AI không tìm thấy phần tử nào đủ độ tin cậy để thay thế.`);
+          }
+        } catch (llmError) {
+          logger.error(`    [AI Recovery Failed] Lỗi trong quá trình AI xử lý: ${llmError.message}`);
         }
-        logger.warn(`    Step failed, retrying (${attempt}/${maxRetries}): ${stepText}`);
-        logger.dim(`      Type: ${getErrorLabel(error.kind)}`);
-        logger.dim(`      Reason: ${error.message.split('\n')[0]}`);
-        await actionExecutor.page.waitForTimeout(1000 * attempt);
       }
+
+      // 3. Nếu tới đây có nghĩa là hỏng hoàn toàn -> Dừng ngay lập tức
+      error.stepNumber = stepNumber;
+      logger.error(`    [Final Failure] Dừng kịch bản tại bước ${stepNumber}: ${error.message}`);
+      throw error;
     }
   }
 

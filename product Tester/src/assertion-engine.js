@@ -40,9 +40,14 @@ class AssertionEngine {
 
     await this.warmUp(expectedLower);
 
-    const bodyText = normalizeWhitespace(await this.page.locator('body').innerText().catch(() => ''));
+    // Chỉ lấy văn bản thực sự HIỂN THỊ trên màn hình
+    const bodyText = await this.page.evaluate(() => {
+      return document.body.innerText; 
+    }).catch(() => '');
+    
+    const cleanedText = normalizeWhitespace(bodyText);
     const url = this.page.url();
-    const bodyLower = bodyText.toLowerCase();
+    const bodyLower = cleanedText.toLowerCase();
 
     const pass = (actual, note = '-') => ({ passed: true, actual, note });
     const fail = (actual, note = '-') => ({ passed: false, actual, note });
@@ -64,9 +69,16 @@ class AssertionEngine {
       return pass(`Nội dung thực tế khớp chính xác với mong đợi.`);
     }
 
-    // Dashboard redirect speed check
-    if (/redirected?.*dashboard/i.test(expectedLower) && (new RegExp(config.DASHBOARD_PAGE_PATTERN, 'i').test(url))) {
-      return pass(`Đã chuyển hướng đến Dashboard.`);
+    // Dashboard redirect or SUCCESS text speed check
+    const isDashboardUrl = new RegExp(config.DASHBOARD_PAGE_PATTERN, 'i').test(url);
+    const hasSuccessKeywords = /(chào mừng|đăng xuất|tài khoản|xin chào)/i.test(bodyLower);
+
+    if (expectedLower.includes('thành công') || /redirected?.*dashboard/i.test(expectedLower)) {
+      if (isDashboardUrl || hasSuccessKeywords) {
+        return pass(hasSuccessKeywords 
+          ? `Quan sát thấy dấu hiệu thành công: "${bodyLower.match(/(chào mừng|đăng xuất|tài khoản|xin chào)/i)?.[0]}"` 
+          : `Đã chuyển hướng đến Dashboard.`);
+      }
     }
 
     // --- 2. SEMANTIC FALLBACK (THE HYBRID JUDGE) ---

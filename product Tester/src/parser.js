@@ -12,6 +12,7 @@ const COLUMN_ALIASES = {
   steps: ['steps', 'step', 'test steps', 'các bước', 'bước', 'bước thực hiện', 'actions', 'thao tác'],
   expected: ['expected', 'expected result', 'expected outcome', 'kết quả mong đợi', 'kết quả', 'mong đợi'],
   notes: ['notes', 'note', 'ghi chú', 'remarks', 'comment', 'comments'],
+  prerequisite: ['prerequisite', 'pre-requisite', 'dependency', 'yêu cầu trước', 'phụ thuộc', 'tiền đề'],
 };
 
 const POSITIONAL_MAPPING = {
@@ -20,7 +21,7 @@ const POSITIONAL_MAPPING = {
   description: 2,
   steps: 3,
   expected: 4,
-  notes: 5,
+  prerequisite: 5,
 };
 
 class ExcelParser {
@@ -100,6 +101,7 @@ class ExcelParser {
     if (mapping.steps === undefined && normalizedHeaders.length > 3) mapping.steps = POSITIONAL_MAPPING.steps;
     if (mapping.expected === undefined && normalizedHeaders.length > 4) mapping.expected = POSITIONAL_MAPPING.expected;
     if (mapping.notes === undefined && normalizedHeaders.length > 5) mapping.notes = POSITIONAL_MAPPING.notes;
+    if (mapping.prerequisite === undefined && normalizedHeaders.length > 5) mapping.prerequisite = POSITIONAL_MAPPING.prerequisite;
 
     return mapping;
   }
@@ -129,6 +131,7 @@ class ExcelParser {
     const stepsRaw = this.getCell(cells, 'steps');
     const expected = this.getCell(cells, 'expected');
     const notes = this.getCell(cells, 'notes');
+    const prerequisite = this.getCell(cells, 'prerequisite');
 
     if (!stepsRaw && !expected && !title) {
       return null;
@@ -147,6 +150,7 @@ class ExcelParser {
       stepsRaw,
       expected,
       notes,
+      prerequisite,
       sourceRow: index + 1,
 
       // Legacy compatibility for older code paths.
@@ -155,6 +159,7 @@ class ExcelParser {
       Description: description,
       Steps: stepsRaw,
       'Expected Result': expected,
+      Prerequisite: prerequisite,
     };
   }
 

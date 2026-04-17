@@ -1,8 +1,8 @@
 # Kế Hoạch Kiểm Thử
 
 **Nguồn file:** unit_test_login_register.xlsx
-**Ngày tạo/cập nhật:** 14:21:33 16/4/2026
-**Tổng số test case:** 5
+**Ngày tạo/cập nhật:** 09:16:39 17/4/2026
+**Tổng số test case:** 6
 **Ứng dụng đích:** https://mini-unigate.fsoft.com.vn/fkr/
 
 ---
@@ -26,8 +26,6 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 2. Nhập Username: "Admin".
 3. Nhập Password: "fbgsde45634#$%^".
 4. Nhấn nút "Sign in".
-5. di chuột vào "admin"
-6. nhấn "logout"
 - **Trạng thái:** ✅ Đạt
 
 **Các bước thực hiện:**
@@ -35,18 +33,16 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 2. [FILL] "username" : "Admin"
 3. [FILL] "password" : "fbgsde45634#$%^"
 4. [CLICK] "Sign in"
-5. [HOVER] "admin"
-6. [CLICK] "logout"
 
 **Kết quả mong đợi:**
-- Người dùng được chuyển về trang Sign to get started
+- Người dùng được chuyển về trang My Workspace
 
-**Kết quả thực tế:** Username or email address is required.; Password is required.
+**Kết quả thực tế:** Đăng nhập thất bại; Tên đăng nhập không đúng
 
 **Bằng chứng:**
-- [Ảnh chụp](../runs/run_20260416_141945/cases/tc-01/tc-01.png)
+- [Ảnh chụp](../runs/run_20260417_091609/cases/tc-01/tc-01.png)
 
-**Ghi chú kết quả:** Hoàn thành 6/6 bước. [Judge] Xác nhận đăng xuất thành công qua trạng thái trang.. [AI Note] Thấy lỗi tiếng Anh khớp với mong đợi tiếng Việt
+**Ghi chú kết quả:** [Judge] . [AI Note] User is trying to login with incorrect username
 
 ---
 
@@ -56,7 +52,7 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 2. Nhập Username: "admin".
 3. Nhập Password sai: "wrong_pass123".
 4. Nhấn nút "Login".
-- **Trạng thái:** ✅ Đạt
+- **Trạng thái:** ⚠️ Bị chặn
 
 **Các bước thực hiện:**
 1. [GOTO] "https://mini-unigate.fsoft.com.vn/fkr/auth/login"
@@ -67,12 +63,12 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 **Kết quả mong đợi:**
 - Hệ thống không cho phép đăng nhập vì nhập sai tài khoản hoặc mật khẩu
 
-**Kết quả thực tế:** Please enter your username and password to login.; Invalid username or password.
+**Kết quả thực tế:** Bị chặn vì kịch bản phụ thuộc TC-01 trả về 'passed', trong khi mong đợi 'failed'
 
 **Bằng chứng:**
-- [Ảnh chụp](../runs/run_20260416_141945/cases/tc-02/tc-02.png)
+- Không có bằng chứng
 
-**Ghi chú kết quả:** Hoàn thành 4/4 bước. [Judge] Thông báo lỗi trên màn hình khớp với nghiệp vụ.. [AI Note] Thấy lỗi tiếng Anh khớp với mong đợi tiếng Việt
+**Ghi chú kết quả:** Kiểm tra lại luồng logic giữa TC-01 và TC-02.
 
 ---
 
@@ -82,7 +78,7 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 2. Nhập Username chưa đăng ký: "UnknownUser".
 3. Nhập Password bất kỳ.
 4. Nhấn nút "Sign in".
-- **Trạng thái:** ✅ Đạt
+- **Trạng thái:** ⚠️ Bị chặn
 
 **Các bước thực hiện:**
 1. [GOTO] "https://mini-unigate.fsoft.com.vn/fkr/auth/login"
@@ -93,12 +89,12 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 **Kết quả mong đợi:**
 - Hệ thống không cho phép đăng nhập vì tài khoản không tồn tại.
 
-**Kết quả thực tế:** Please enter your username and password to login.; Invalid username or password.
+**Kết quả thực tế:** Bị chặn vì kịch bản phụ thuộc TC-01 trả về 'passed', trong khi mong đợi 'failed'
 
 **Bằng chứng:**
-- [Ảnh chụp](../runs/run_20260416_141945/cases/tc-03/tc-03.png)
+- Không có bằng chứng
 
-**Ghi chú kết quả:** Hoàn thành 4/4 bước. [Judge] Thông báo lỗi trên màn hình khớp với nghiệp vụ.. [AI Note] Thấy lỗi tiếng Anh khớp với mong đợi tiếng Việt
+**Ghi chú kết quả:** Kiểm tra lại luồng logic giữa TC-01 và TC-03.
 
 ---
 
@@ -108,7 +104,7 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 2. Nhập Username: "Admin".
 3. Nhập vào ô mật khẩu chuỗi: " ' OR '1'='1 ".
 4. Nhấn nút "Login".
-- **Trạng thái:** ✅ Đạt
+- **Trạng thái:** ⚠️ Bị chặn
 
 **Các bước thực hiện:**
 1. [GOTO] "https://mini-unigate.fsoft.com.vn/fkr/auth/login"
@@ -119,12 +115,12 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 **Kết quả mong đợi:**
 - Hệ thống không bị đăng nhập trái phép.
 
-**Kết quả thực tế:** Please enter your username and password to login.; Invalid username or password.
+**Kết quả thực tế:** Bị chặn vì kịch bản phụ thuộc TC-01 trả về 'passed', trong khi mong đợi 'failed'
 
 **Bằng chứng:**
-- [Ảnh chụp](../runs/run_20260416_141945/cases/tc-04/tc-04.png)
+- Không có bằng chứng
 
-**Ghi chú kết quả:** Hoàn thành 4/4 bước. [Judge] . [AI Note] Thấy lỗi tiếng Anh khớp với mong đợi tiếng Việt
+**Ghi chú kết quả:** Kiểm tra lại luồng logic giữa TC-01 và TC-04.
 
 ---
 
@@ -134,7 +130,7 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 2. Nhập user name "Admin2"
 3. Nhập mật khẩu "123"
 4.Bấm 6 lần "SIGN IN"
-- **Trạng thái:** ✅ Đạt
+- **Trạng thái:** ⚠️ Bị chặn
 
 **Các bước thực hiện:**
 1. [GOTO] "https://mini-unigate.fsoft.com.vn/fkr/auth/login"
@@ -150,12 +146,32 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 **Kết quả mong đợi:**
 - Hệ thống hiển tài khoản bị khóa hoặc bị chặn hoặc tài khoản không đúng.
 
-**Kết quả thực tế:** Please enter your username and password to login.; Invalid username or password.
+**Kết quả thực tế:** Bị chặn vì kịch bản phụ thuộc TC-01 trả về 'passed', trong khi mong đợi 'failed'
 
 **Bằng chứng:**
-- [Ảnh chụp](../runs/run_20260416_141945/cases/tc-05/tc-05.png)
+- Không có bằng chứng
 
-**Ghi chú kết quả:** Hoàn thành 9/9 bước. [Judge] . [AI Note] Thấy lỗi tiếng Anh khớp với mong đợi tiếng Việt
+**Ghi chú kết quả:** Kiểm tra lại luồng logic giữa TC-01 và TC-05.
+
+---
+
+### TC-06 — logout
+
+- **Mô tả:** 1. di chuyển chuột vào "admin"
+2. chọn "logout"
+- **Trạng thái:** ✅ Đạt
+
+**Các bước thực hiện:**
+1. [HOVER] "admin"
+2. [CLICK] "logout"
+
+**Kết quả mong đợi:**
+- Hệ thống trở về trang "Sign in to get started"
+
+**Kết quả thực tế:** Quan sát được chính xác nội dung: "Sign in to get started"
+
+**Bằng chứng:**
+- [Ảnh chụp](../runs/run_20260417_091609/cases/tc-06/tc-06.png)
 
 ---
 
@@ -167,8 +183,9 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 
 | Mã TC | Tên Test | Kết Quả | Bằng Chứng | Ghi Chú |
 |-------|----------|---------|------------|---------|
-| TC-01 | Đăng nhập thành công (Admin) | ✅ Đạt | [Ảnh](../runs/run_20260416_141945/cases/tc-01/tc-01.png) | Hoàn thành 6/6 bước. [Judge] Xác nhận đăng xuất thành công qua trạng thái trang.. [AI Note] Thấy lỗi tiếng Anh khớp với mong đợi tiếng Việt |
-| TC-02 | Đăng nhập sai mật khẩu | ✅ Đạt | [Ảnh](../runs/run_20260416_141945/cases/tc-02/tc-02.png) | Hoàn thành 4/4 bước. [Judge] Thông báo lỗi trên màn hình khớp với nghiệp vụ.. [AI Note] Thấy lỗi tiếng Anh khớp với mong đợi tiếng Việt |
-| TC-03 | Đăng nhập tài khoản không tồn tại | ✅ Đạt | [Ảnh](../runs/run_20260416_141945/cases/tc-03/tc-03.png) | Hoàn thành 4/4 bước. [Judge] Thông báo lỗi trên màn hình khớp với nghiệp vụ.. [AI Note] Thấy lỗi tiếng Anh khớp với mong đợi tiếng Việt |
-| TC-04 | Phép thử với chuỗi ký tự đặc biệt | ✅ Đạt | [Ảnh](../runs/run_20260416_141945/cases/tc-04/tc-04.png) | Hoàn thành 4/4 bước. [Judge] . [AI Note] Thấy lỗi tiếng Anh khớp với mong đợi tiếng Việt |
-| TC-05 | Kiểm tra giới hạn đăng nhập sai | ✅ Đạt | [Ảnh](../runs/run_20260416_141945/cases/tc-05/tc-05.png) | Hoàn thành 9/9 bước. [Judge] . [AI Note] Thấy lỗi tiếng Anh khớp với mong đợi tiếng Việt |
+| TC-01 | Đăng nhập thành công (Admin) | ✅ Đạt | [Ảnh](../runs/run_20260417_091609/cases/tc-01/tc-01.png) | [Judge] . [AI Note] User is trying to login with incorrect username |
+| TC-02 | Đăng nhập sai mật khẩu | ⚠️ Bị chặn | - | Kiểm tra lại luồng logic giữa TC-01 và TC-02. |
+| TC-03 | Đăng nhập tài khoản không tồn tại | ⚠️ Bị chặn | - | Kiểm tra lại luồng logic giữa TC-01 và TC-03. |
+| TC-04 | Phép thử với chuỗi ký tự đặc biệt | ⚠️ Bị chặn | - | Kiểm tra lại luồng logic giữa TC-01 và TC-04. |
+| TC-05 | Kiểm tra giới hạn đăng nhập sai | ⚠️ Bị chặn | - | Kiểm tra lại luồng logic giữa TC-01 và TC-05. |
+| TC-06 | logout | ✅ Đạt | [Ảnh](../runs/run_20260417_091609/cases/tc-06/tc-06.png) | - |

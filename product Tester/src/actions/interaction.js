@@ -19,59 +19,64 @@ class InteractionAction {
   }
 
   async observe(target) {
-    if (config.EXECUTION_MODE === 'hybrid' && target) {
-      try {
-        const productInfo = await this.page.evaluate(() => {
-          const items = Array.from(document.querySelectorAll('.product-item, .item-box, .product-grid .item-box'));
-          if (!items.length) return '';
-          return items.map(item => {
-            const name = item.querySelector('.product-title, h2, .details a')?.innerText?.trim() || '';
-            const price = item.querySelector('.actual-price, .price, .product-price')?.innerText?.trim() || '';
-            return name && (price || 'Details') ? `${name} : ${price || 'See Details'}` : '';
-          }).filter(Boolean).join('\\n');
-        });
-
-        if (productInfo) {
-          const LlmClient = require('../llm-client');
-          const client = new LlmClient();
-          const response = await client.chat([
-            { role: 'system', content: "You are an AI UI Agent. Based on the product list, find the ONE product that best matches the user's objective (e.g., 'most expensive', 'cheapest', 'specific name'). Return ONLY the EXACT name of that product. No explanation. Return 'NONE' if no product matches." },
-            { role: 'user', content: `Product List:\n${productInfo}\n\nTask: ${target}` }
-          ]);
-          
-          let productName = response.text.trim();
-          productName = productName.replace(/^["']|["']$/g, '').trim();
-
-          if (productName && productName !== 'NONE') {
-            const logger = require('../logger');
-            logger.info(`    [AI Decision] Chọn sản phẩm: "${productName}" để thực hiện task: "${target}"`);
-            
-            // Try to click "Add to cart" or just the product if it's the target
-            const locator = await this.resolver.resolveClickable(`"Add to cart" của sản phẩm "${productName}"`).catch(async () => {
-                return await this.resolver.resolveClickable(productName);
-            });
-
-            try {
-               await locator.click({ timeout: 5000 });
-               await this.page.waitForLoadState('load').catch(() => {});
-               await this.page.waitForTimeout(1000);
-            } catch (e) {
-               await locator.click({ force: true, timeout: 5000 });
-               await this.page.waitForLoadState('load').catch(() => {});
-               await this.page.waitForTimeout(1000);
-            }
-          } else {
-             const logger = require('../logger');
-             logger.warn(`    [AI Decision] Không tìm thấy sản phẩm nào phù hợp với yêu cầu: "${target}"`);
+    const logger = require('../logger');
+    logger.info(`    [Observer] Đang quan sát màn hình với mục tiêu: "${target}"...`);
+    
+    const uiContext = await this.page.evaluate(() => {
+      const getVisibleText = (root) => {
+        let text = "";
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+          acceptNode: (node) => {
+            const style = window.getComputedStyle(node.parentElement);
+            return (style.display !== 'none' && style.visibility !== 'hidden' && node.textContent.trim()) 
+              ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
           }
-        } else {
-           const logger = require('../logger');
-           logger.warn(`    [AI Decision Failed] Không tìm thấy thẻ HTML sản phẩm nào trên trang. Có thể trang bị lỗi hoặc cấu trúc DOM đã thay đổi.`);
-        }
-      } catch (error) {
-        const logger = require('../logger');
-        logger.warn(`    [AI Decision Failed] Lỗi trong quá trình phân tích/thực thi: ${error.message}`);
+        });
+        while(walker.nextNode()) text += walker.currentNode.textContent.trim() + " | ";
+        return text;
+      };
+
+      const elements = Array.from(document.querySelectorAll('h1, h2, h3, h4, .title, .name, .item, [role="button"], [role="link"]'))
+        .filter(el => {
+          const rect = el.getBoundingClientRect();
+          return rect.width > 0 && rect.height > 0;
+        })
+        .map(el => `${el.tagName}: ${el.innerText.trim()}`)
+        .join('\n');
+
+      return `Visible Text: ${getVisibleText(document.body)}\nStructural Elements:\n${elements}`;
+    });
+
+    try {
+      const LlmClient = require('../llm-client');
+      const client = new LlmClient();
+      const prompt = `You are a UI Observer.
+Your task is to verify if the user's goal is met based on the current UI state.
+
+User Goal: "${target}"
+UI Snapshot:
+${uiContext}
+
+RULES:
+1. Response must be in JSON format: {"met": true/false, "reason": "concise explanation in Vietnamese"}
+2. Be strict. If the goal is "See 3 apps" and only 2 are clearly present, "met" should be false.
+3. If the goal is met, "met" should be true.`;
+
+      const response = await client.chat([
+        { role: 'system', content: "Return ONLY JSON." },
+        { role: 'user', content: prompt }
+      ]);
+      
+      const result = JSON.parse(response.text.match(/\{.*\}/s)[0]);
+      
+      if (result.met) {
+        logger.success(`    [Observer] Xác nhận: ${result.reason}`);
+      } else {
+        throw createInteractionError('selector_fail', `Quan sát thất bại: ${result.reason}`);
       }
+    } catch (error) {
+       if (error.kind) throw error;
+       logger.warn(`    [Observer Warning] Lỗi kỹ thuật khi quan sát: ${error.message}. Tiếp tục thực thi...`);
     }
     await this.page.waitForTimeout(1000);
   }
@@ -96,7 +101,7 @@ class InteractionAction {
   async hoverTarget(target) {
     const locator = await this.resolver.resolveClickable(target);
     await locator.hover();
-    await this.page.waitForTimeout(500);
+    await this.page.waitForTimeout(800);
   }
 
   async pressKey(key) {

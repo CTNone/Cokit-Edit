@@ -104,6 +104,7 @@ async function runExecution(options, testCases = null) {
     });
 
     await runner.init(runFolder, testCases);
+    runner.setExecutionQueue(casesToRun);
     for (const testCase of casesToRun) {
       await runner.runScenario(testCase);
     }
@@ -215,8 +216,8 @@ program
       return;
     }
 
-    testCases = selectCases(testCases, executionChoice);
-    if (testCases.length === 0) {
+    const selectedCases = selectCases(testCases, executionChoice);
+    if (selectedCases.length === 0) {
       logger.warn('No test cases selected to run.');
       return;
     }
@@ -228,7 +229,7 @@ program
       targetUrl: options.targetUrl,
       select: executionChoice.mode === 'select' ? executionChoice.ids.join(',') : undefined,
       retry: executionChoice.mode === 'retry',
-    }, testCases);
+    }, testCases); // Truyền testCases ĐẦY ĐỦ ở đây
 
     process.exit(0);
   });
