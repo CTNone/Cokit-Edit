@@ -13,6 +13,8 @@ const PlaywrightRunner = require('./runner');
 
 const resultsManager = require('./results');
 const retryManager = require('./retry');
+const ExplorationAgent = require('./exploration-agent');
+const Synthesizer = require('./synthesizer');
 
 function normalizeArgs() {
   const args = process.argv.slice(2);
@@ -192,8 +194,18 @@ program
   .option('--target-url <url>', 'Target application URL', config.TARGET_URL)
   .action(async (xlsxPath, options) => {
     logger.info('Starting automation execution via CLI...');
-    const inputPath = path.resolve(xlsxPath || config.DEFAULT_XLSX_PATH);
-    const planPath = path.resolve(options.plan || resolveOutputPath(inputPath));
+    let inputPath = path.resolve(xlsxPath || config.DEFAULT_XLSX_PATH);
+    let planPath = options.plan ? path.resolve(options.plan) : null;
+
+    // Smart logic: if user passes a .md file instead of .xlsx
+    if (inputPath.toLowerCase().endsWith('.md')) {
+      if (!planPath) planPath = inputPath;
+      // Try to find the xlsx file with the same name
+      inputPath = inputPath.replace(/\.md$/i, '.xlsx');
+      logger.dim(`    [Smart] Phát hiện đường dẫn .md, tự động chuyển về source excel: ${inputPath}`);
+    } else {
+      if (!planPath) planPath = resolveOutputPath(inputPath);
+    }
 
     let testCases = parseTestCases(inputPath);
 
@@ -232,6 +244,46 @@ program
     }, testCases); // Truyền testCases ĐẦY ĐỦ ở đây
 
     process.exit(0);
+  });
+
+program
+  .command('explore [url]')
+  .description('Autonomously explore a web application and discover flows')
+  .option('--max-interactions <number>', 'Maximum interactions to perform', 15)
+  .option('--depth <number>', 'Maximum navigation depth', 2)
+  .option('--headed', 'Run browser in headed mode', false)
+  .option('--output <path>', 'Path to save the generated test plan', './plans/explorer-result.md')
+  .action(async (url, options) => {
+    logger.info('Starting autonomous exploration...');
+    const targetUrl = url || config.TARGET_URL;
+    const agent = new ExplorationAgent({
+      targetUrl,
+      maxInteractions: parseInt(options.maxInteractions),
+      maxDepth: parseInt(options.depth),
+      headed: options.headed,
+    });
+
+    try {
+      await agent.init();
+      const results = await agent.explore();
+      
+      if (results.flows.length > 0) {
+        const synthesizer = new Synthesizer();
+        const mdContent = synthesizer.synthesize(results);
+        const outputPath = path.resolve(options.output);
+        await synthesizer.saveToFile(mdContent, outputPath);
+        
+        logger.info(`Exploration summary: ${results.visitedUrls.length} pages visited, ${results.flows.length} flows discovered.`);
+        logger.success('You can now run this test plan using: product-tester run ' + options.output);
+      } else {
+        logger.warn('Exploration completed but no significant user flows were discovered.');
+      }
+    } catch (error) {
+      logger.error(`Exploration failed: ${error.message}`);
+    } finally {
+      await agent.cleanup();
+      process.exit(0);
+    }
   });
 
 program.parse(process.argv);

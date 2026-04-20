@@ -1,10 +1,10 @@
 # Kế Hoạch Kiểm Thử
 
 **Nguồn file:** cnt_test_fkr.xlsx
-**Ngày tạo/cập nhật:** 15:51:06 17/4/2026
+**Ngày tạo/cập nhật:** 14:32:49 20/4/2026
 **Tổng số test case:** 13
 **Ứng dụng đích:** https://mini-unigate.fsoft.com.vn/fkr/
-**Phạm vi chạy hiện tại:** TC-03
+**Phạm vi chạy hiện tại:** TC-07
 
 ---
 
@@ -43,9 +43,9 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 **Kết quả thực tế:** Đăng nhập thất bại; Tên đăng nhập không đúng
 
 **Bằng chứng:**
-- [Ảnh chụp](../runs/run_20260417_155004/cases/tc-01/tc-01.png)
+- [Ảnh chụp](../runs/run_20260420_142923/cases/tc-01/tc-01.png)
 
-**Ghi chú kết quả:** [Judge] . [AI Note] User is attempting to log in with incorrect username.
+**Ghi chú kết quả:** [Judge] . [AI Note] User is on the login page with error messages.
 
 ---
 
@@ -69,33 +69,32 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 ### TC-03 — Kiểm tra thanh tìm kiếm (Search Apps)
 
 - **Mô tả:** 1. Nhập "Human" vào ô Search Apps.
-2. Click nút x bên phải Search Apps.
-- **Trạng thái:** ✅ Đạt
+2. Xóa "Human" trong ô Search Apps.
+- **Trạng thái:** Chưa chạy
 
 **Các bước thực hiện:**
 1. [FILL] "Search Apps" : "Human"
-2. [CLICK] "x"
+2. [CLICK] "Search Apps"
+3. [DELETE] "Search Apps" : "Human"
 
 **Kết quả mong đợi:**
 - Chỉ hiển thị card "Human Resource Management".
 
-**Kết quả thực tế:** Quan sát được chính xác nội dung: "Human Resource Management"
+**Kết quả thực tế:** *(điền sau khi chạy)*
 
-**Bằng chứng:**
-- [Ảnh chụp](../runs/run_20260417_155004/cases/tc-03/tc-03.png)
+**Bằng chứng:** *(screenshot/video sẽ được gắn vào đây)*
 
 ---
 
 ### TC-04 — Kiểm tra điều hướng khi click vào App
 
-- **Mô tả:** 1. Click vào card "Human Resource Managemen".
-2. Đóng tab "Human Resource Managemen".
+- **Mô tả:** 1. Click "Human Resource Managemen".
+2. Đóng cửa số "Human Resource Managemen".
 - **Trạng thái:** Chưa chạy
 
 **Các bước thực hiện:**
 1. [CLICK] "Human Resource Management"
-2. [SWITCH_WINDOW] "Human Resource Management"
-3. [CLOSE_WINDOW]
+2. [CLOSE_WINDOW] "Human Resource Management"
 
 **Kết quả mong đợi:**
 - Hệ thống chuyển hướng đúng sang trang Human Resource Management.
@@ -109,12 +108,12 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 ### TC-05 — Kiểm tra điều hướng khi click vào App
 
 - **Mô tả:** 1. Click vào card "Ticket Management".
-2. Đóng tab "Ticket Management".
+2. Đóng cửa sổ "Ticket Management".
 - **Trạng thái:** Chưa chạy
 
 **Các bước thực hiện:**
 1. [CLICK] "Ticket Management"
-2. [CLOSE_WINDOW]
+2. [CLOSE_WINDOW] "Ticket Management"
 
 **Kết quả mong đợi:**
 - Hệ thống chuyển hướng đúng sang trang Ticket Management.
@@ -128,11 +127,11 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 ### TC-06 — Kiểm tra điều hướng khi click vào App
 
 - **Mô tả:** 1. Click vào card "SLA".
-2. 2. Đóng tab "SLA".
+2. Đóng cửa sổ "SLA".
 - **Trạng thái:** Chưa chạy
 
 **Các bước thực hiện:**
-1. [CLICK] "card SLA"
+1. [CLICK] "SLA"
 2. [CLOSE_WINDOW]
 
 **Kết quả mong đợi:**
@@ -146,22 +145,33 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 
 ### TC-07 — Kiểm tra chức năng thu gọn/mở rộng sơ đồ
 
-- **Mô tả:** 1. Thực hiện TC-04 . 
-2. Click tab "Department Graph".
-3. Click (-) dưới node FKR (N/A) màu đỏ
-- **Trạng thái:** Chưa chạy
+- **Mô tả:** 1. Click "Human Resource Managemen". 
+2. Click "Menu"
+3. Click "Departments".
+4. Click "Employees"
+5. Click "Advance Settings"
+6. Click "Job title"
+7. Click "Skill"
+- **Trạng thái:** ❌ Không đạt
 
 **Các bước thực hiện:**
-1. [OBSERVE] "TC-04"
-2. [CLICK] "Department Graph"
-3. [HOVER] "node FKR" [CLICK] "-"
+1. [CLICK] "Human Resource Management"
+2. [CLICK] "Menu"
+3. [CLICK] "Departments"
+4. [CLICK] "Employees"
+5. [CLICK] "Advance Settings"
+6. [CLICK] "Job title"
+7. [CLICK] "Skill"
 
 **Kết quả mong đợi:**
-- Node con của phòng ban đó sẽ ẩn đi/hiện lại.
+- Chuyển đổi giữa các tab
 
-**Kết quả thực tế:** *(điền sau khi chạy)*
+**Kết quả thực tế:** Bước 7 gặp lỗi [Selector fail]: Không tìm thấy phần tử phù hợp: click target "Skill"
 
-**Bằng chứng:** *(screenshot/video sẽ được gắn vào đây)*
+**Bằng chứng:**
+- [Ảnh chụp](../runs/run_20260420_142923/cases/tc-07/tc-07.png)
+
+**Ghi chú kết quả:** Selector fail
 
 ---
 
@@ -173,9 +183,11 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 - **Trạng thái:** Chưa chạy
 
 **Các bước thực hiện:**
-1. [GOTO] "HRM > Departments"
-2. [SWITCH_WINDOW] "Department Graph"
-3. [CLICK] "List view"
+1. [CLICK] "HRM"
+2. [CLICK] "Departments"
+3. [CLICK] "Department Graph"
+
+Lưu ý: Theo hướng dẫn, bước 1 nên được tách thành nhiều hành động CLICK tương ứng vì nó là một hành động SMART NAVIGATION & MULTIPLE CLICKS.
 
 **Kết quả mong đợi:**
 - Chuyển từ dạng sơ đồ sang dạng bảng (Table/List)
@@ -194,7 +206,7 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 
 **Các bước thực hiện:**
 1. [GOTO] "HRM"
-2. [SWITCH_WINDOW] "Employees Graph"
+2. [CLICK] "Employees Graph"
 
 **Kết quả mong đợi:**
 - Trang danh sách nhân viên được hiển thị.
@@ -305,13 +317,13 @@ Sau khi kiểm tra xong, xác nhận để bắt đầu chạy test.
 
 | Mã TC | Tên Test | Kết Quả | Bằng Chứng | Ghi Chú |
 |-------|----------|---------|------------|---------|
-| TC-01 | Đăng nhập thành công (Admin) | ✅ Đạt | [Ảnh](../runs/run_20260417_155004/cases/tc-01/tc-01.png) | [Judge] . [AI Note] User is attempting to log in with incorrect username. |
+| TC-01 | Đăng nhập thành công (Admin) | ✅ Đạt | [Ảnh](../runs/run_20260420_142923/cases/tc-01/tc-01.png) | [Judge] . [AI Note] User is on the login page with error messages. |
 | TC-02 | Kiểm tra hiển thị danh sách ứng dụng | Chưa chạy | - | - |
-| TC-03 | Kiểm tra thanh tìm kiếm (Search Apps) | ✅ Đạt | [Ảnh](../runs/run_20260417_155004/cases/tc-03/tc-03.png) | - |
+| TC-03 | Kiểm tra thanh tìm kiếm (Search Apps) | Chưa chạy | - | - |
 | TC-04 | Kiểm tra điều hướng khi click vào App | Chưa chạy | - | - |
 | TC-05 | Kiểm tra điều hướng khi click vào App | Chưa chạy | - | - |
 | TC-06 | Kiểm tra điều hướng khi click vào App | Chưa chạy | - | - |
-| TC-07 | Kiểm tra chức năng thu gọn/mở rộng sơ đồ | Chưa chạy | - | - |
+| TC-07 | Kiểm tra chức năng thu gọn/mở rộng sơ đồ | ❌ Không đạt | [Ảnh](../runs/run_20260420_142923/cases/tc-07/tc-07.png) | Selector fail |
 | TC-08 | Kiểm tra chuyển đổi chế độ xem | Chưa chạy | - | - |
 | TC-09 | Kiểm tra điều hướng sidebar | Chưa chạy | - | - |
 | TC-10 | Kiểm tra hiển thị các nhóm dịch vụ | Chưa chạy | - | - |

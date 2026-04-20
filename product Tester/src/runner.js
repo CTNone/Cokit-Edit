@@ -250,6 +250,7 @@ class PlaywrightRunner {
       referenceData: this.referenceData,
       timeout: config.INTERACTION_TIMEOUT,
       llm: this.llmClient, // Kích hoạt khả năng tự sửa lỗi bằng LLM
+      onPageUpdate: (newPage) => { this.activePage = newPage; }
     });
     const assertionEngine = new AssertionEngine(page, {
       targetUrl: this.options.targetUrl,
@@ -277,36 +278,63 @@ class PlaywrightRunner {
         logger.dim(`    [Continuity] Đã ở sẵn trạng thái session, bỏ qua goto: ${this.options.targetUrl}`);
       }
 
-      const steps = scenario.steps || [];
       let allStepsExecuted = true;
-      
-      for (let index = 0; index < steps.length; index += 1) {
-        failureStep = index + 1;
-        const stepText = steps[index];
-        logger.dim(`    Action: ${normalizeWhitespace(stepText)}`);
-        
-        try {
-          // Luôn đảm bảo ActionExecutor dùng page mới nhất (đề phòng có tab mở ra ở bước trước)
-          actionExecutor.page = this.activePage;
+      let callDepth = 0;
+
+      const processSteps = async (stepsList, prefix = '') => {
+        for (let i = 0; i < stepsList.length; i++) {
+          const currentStepStr = prefix ? `${prefix}${i + 1}` : `${i + 1}`;
+          failureStep = currentStepStr;
+          const stepText = stepsList[i];
+          const action = this.stepParser.parse(stepText);
+
+          if (action.type === 'call') {
+            if (callDepth > 3) throw new Error(`Vượt quá giới hạn lồng nhau (Call Depth > 3) tại: ${action.target}`);
+            callDepth++;
+            const subId = this.normalizeId(action.target);
+            let subScenario = this.catalog.get(subId);
+            if (!subScenario) {
+              subScenario = Array.from(this.catalog.values()).find(
+                tc => tc.title && tc.title.toLowerCase().includes(action.target.toLowerCase())
+              );
+            }
+            if (!subScenario) throw new Error(`Không tìm thấy kịch bản nào khớp với lệnh gọi: ${action.target}`);
+            
+            logger.dim(`    [CALL] -> Đang đệ quy thực hiện ${subId} (${subScenario.title || ''})...`);
+            await processSteps(subScenario.steps || [], `${currentStepStr}.`);
+            callDepth--;
+            continue;
+          }
+
+          logger.dim(`    Action [${currentStepStr}]: ${normalizeWhitespace(stepText)}`);
           
-          const stepResult = await this.executeStepWithRetry(actionExecutor, stepText, failureStep, caseFolder);
-          if (stepResult && stepResult.healed) wasHealed = true;
-          
-          const stepScreenshotPath = path.join(caseFolder, `step-${failureStep}.png`);
-          await page.screenshot({ path: stepScreenshotPath }).catch(() => {});
-          
-          if (!payload.evidence.stepScreenshots) payload.evidence.stepScreenshots = [];
-          payload.evidence.stepScreenshots.push({
-            step: failureStep,
-            action: normalizeWhitespace(stepText),
-            path: stepScreenshotPath
-          });
-        } catch (stepError) {
-          allStepsExecuted = false;
-          // Ném tiếp lỗi ra ngoài try-catch lớn để xử lý payload failure
-          throw stepError;
+          try {
+            // Luôn đảm bảo ActionExecutor dùng page mới nhất (đề phòng có tab mở ra ở bước trước)
+            actionExecutor.page = this.activePage;
+            
+            const stepResult = await this.executeStepWithRetry(actionExecutor, stepText, failureStep, caseFolder);
+            if (stepResult && stepResult.healed) wasHealed = true;
+            
+            const stepScreenshotPath = path.join(caseFolder, `step-${failureStep.replace(/\./g, '_')}.png`);
+            if (this.activePage) {
+              await this.activePage.screenshot({ path: stepScreenshotPath }).catch(() => {});
+            }
+            
+            if (!payload.evidence.stepScreenshots) payload.evidence.stepScreenshots = [];
+            payload.evidence.stepScreenshots.push({
+              step: failureStep,
+              action: normalizeWhitespace(stepText),
+              path: stepScreenshotPath
+            });
+          } catch (stepError) {
+            allStepsExecuted = false;
+            // Ném tiếp lỗi ra ngoài try-catch lớn để xử lý payload failure
+            throw stepError;
+          }
         }
-      }
+      };
+
+      await processSteps(scenario.steps || []);
 
       // --- ĐÁNH GIÁ DỰA TRÊN THỰC THI (PHÂN LOẠI RỦI RO) ---
       if (allStepsExecuted) {
@@ -444,7 +472,7 @@ class PlaywrightRunner {
           
           const aiAction = llmResult?.parsed?.action;
           const isInteraction = ['click', 'hover', 'double_click'].includes(aiAction?.type);
-          const isInputSelector = /input|textarea|email|username|password/i.test(aiAction?.selector || '');
+          const isInputSelector = (/input|textarea/i.test(aiAction?.selector || '') || /name=["']?(username|password|email)["']?/i.test(aiAction?.selector || '')) && !/button|btn|submit|click/i.test(aiAction?.selector || '') && !/login-with-account/i.test(aiAction?.selector || '');
 
           if (aiAction?.type && aiAction.type !== 'unsupported' && aiAction.selector !== 'null') {
             const lowerStep = stepText.toLowerCase();

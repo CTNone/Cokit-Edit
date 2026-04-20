@@ -15,15 +15,21 @@ DSL Syntax Reference:
 - Content View & Windows: 
   [SCROLL] "bottom", [SCROLL] "top"
   [SCROLL_TO] "element_name"
-  [SWITCH_WINDOW] "title_or_url" (e.g. Chuyển sang tab HRM -> [SWITCH_WINDOW] "HRM")
+  [SWITCH_WINDOW] "title_or_url" (CHỈ DÙNG BẮT BUỘC khi ứng dụng chủ động mở ra một tab/cửa sổ TRÌNH DUYỆT mới. TUYỆT ĐỐI KHÔNG dùng khi mô tả việc chuyển UI Tab, Header Tab trong nội bộ trang SPA. Sử dụng [CLICK] cho trường hợp UI tab).
   [CLOSE_WINDOW] (e.g. Đóng tab hiện tại -> [CLOSE_WINDOW])
 - Assertion & Observation:
   [OBSERVE] "description" (e.g. Quan sát danh sách ứng dụng -> [OBSERVE] "danh sách ứng dụng")
 - Forms & Inputs: 
   [FILL] "field_name" : "value"
   [SELECT] "dropdown_name" : "option"
-  [CLICK] "target" (Dùng cho cả việc click vào card, icon, link)
+  [CLICK] "target" (Dùng cho cả việc click vào card, icon, link, và UI Tab)
   [HOVER] "target" (BẮT BUỘC dùng khi cần mở menu ẩn, dropdown)
+- Test Case calling:
+  [CALL] "ID_hoặc_Tên_TC" (e.g. "Thực hiện TC-04" -> [CALL] "TC-04")
+
+- SMART NAVIGATION & MULTIPLE CLICKS (CRITICAL):
+  Khi người dùng điều hướng menu nhiều cấp (Ví dụ: "Truy cập HRM > Departments" hoặc "Click A > B"), bạn PHẢI tách thành nhiều hành động CLICK tương ứng chứ KHÔNG NÊN dùng [GOTO] nếu không phải URL vật lý.
+  VD: "Truy cập HRM > Departments" -> 1. [CLICK] "HRM" \n 2. [CLICK] "Departments"
 
 - REPETITION & LOOPS (CRITICAL):
   Nếu một bước yêu cầu lặp lại nhiều lần (Ví dụ: "Nhập sai 5 lần"), bạn PHẢI tự động sinh ra ĐẦY ĐỦ số lượng các bước DSL lặp lại tương ứng.

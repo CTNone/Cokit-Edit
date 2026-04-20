@@ -19,6 +19,7 @@ class ActionExecutor {
     this.formAction = new FormAction(page, this.selectorResolver);
     this.interactionAction = new InteractionAction(page, this.selectorResolver);
     this.authAction = new AuthAction(page, this.selectorResolver, { referenceData: this.referenceData, targetUrl: this.targetUrl });
+    this.onPageUpdate = options.onPageUpdate || (() => {});
   }
 
   async execute(action) {
@@ -38,10 +39,10 @@ class ActionExecutor {
         await this.authAction.execute(action);
       } else if (action.type === 'switch-window') {
         const pages = this.page.context().pages();
-        const target = action.target.toLowerCase();
+        const target = (action.target || '').toLowerCase();
         for (const p of pages) {
           const title = (await p.title().catch(() => '')).toLowerCase();
-          const url = (await p.url()).toLowerCase();
+          const url = (await p.url() || '').toLowerCase();
           // Fuzzy match: tiêu đề chứa target HOẶC target chứa tiêu đề (giúp xử lý HRM vs Human Resource Management)
           if (title.includes(target) || target.includes(title) || url.includes(target)) {
             await p.bringToFront();
@@ -56,7 +57,6 @@ class ActionExecutor {
         const remaining = context.pages();
         if (remaining.length > 0) {
           this._updatePage(remaining[remaining.length - 1]);
-          await this.page.bringToFront();
         }
       } else {
         throw createInteractionError('action_fail', `Hành động không xác định: ${action.type}`);
@@ -76,6 +76,8 @@ class ActionExecutor {
     this.formAction.page = newPage;
     this.interactionAction.page = newPage;
     this.authAction.page = newPage;
+    this.onPageUpdate(newPage);
+    this.page.bringToFront().catch(() => {});
   }
 }
 

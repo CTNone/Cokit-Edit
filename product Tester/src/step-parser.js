@@ -24,7 +24,7 @@ class StepParser {
     let value = '';
     
     // Actions that are known to take only one argument (target)
-    const singleArgActions = ['GOTO', 'CLICK', 'CHECK', 'HOVER', 'PRESS', 'SCROLL', 'SCROLL_TO', 'NAV', 'MOBILE_VIEW', 'READ', 'LOOK_AT', 'LOOKAT', 'OBSERVE', 'SWITCH_WINDOW'];
+    const singleArgActions = ['GOTO', 'CLICK', 'CHECK', 'HOVER', 'PRESS', 'SCROLL', 'SCROLL_TO', 'NAV', 'MOBILE_VIEW', 'READ', 'LOOK_AT', 'LOOKAT', 'OBSERVE', 'SWITCH_WINDOW', 'CALL'];
 
     if (singleArgActions.includes(actionType)) {
       target = unquote(remainder);
@@ -63,6 +63,7 @@ class StepParser {
       case 'OBSERVE': return { type: 'observe', target, raw: text };
       case 'SWITCH_WINDOW': return { type: 'switch-window', target, raw: text };
       case 'CLOSE_WINDOW': return { type: 'close-window', raw: text };
+      case 'CALL': return { type: 'call', target, raw: text };
       case 'UNKNOWN': return { type: 'unsupported', message: `LLM could not compile this step`, raw: text };
       default: return { type: 'unsupported', message: `Unknown ACTION tag: [${actionType}]`, raw: text };
     }

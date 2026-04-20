@@ -5,7 +5,7 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 
 module.exports = {
   // URLs & Navigation
-  TARGET_URL: process.env.TARGET_URL || 'https://demowebshop.tricentis.com/',
+  TARGET_URL: process.env.TARGET_URL || 'https://mini-unigate.fsoft.com.vn/fkr/',
   LOGIN_PAGE_PATTERN: 'login|auth', // Regex pattern to match login page
   DASHBOARD_PAGE_PATTERN: 'dashboard|admin|home|portal|index|account', // Regex pattern to match dashboard page
 
@@ -26,7 +26,7 @@ module.exports = {
 
   // Persistent Profile Config
   USE_PERSISTENT_PROFILE: true,
-  USER_DATA_DIR: process.env.USER_DATA_DIR || path.join(ROOT_DIR, '.browser-data'), 
+  USER_DATA_DIR: process.env.USER_DATA_DIR || path.join(ROOT_DIR, '.browser-data'),
   PROFILE_NAME: process.env.PROFILE_NAME || 'Default',
   CHROME_PATH: process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
 
